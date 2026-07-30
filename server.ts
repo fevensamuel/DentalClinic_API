@@ -12,7 +12,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dental_clinic_super_secret_key_2026';
 
 // ==========================================
-// 1. MIDDLEWARE CONFIGURATION (FIRST!)
+// 1. MIDDLEWARE CONFIGURATION
 // ==========================================
 
 // CORS Configuration
@@ -55,7 +55,7 @@ const authLimiter = rateLimit({
 });
 
 // ==========================================
-// 2. AUTH MIDDLEWARE FUNCTIONS (DEFINE HERE!)
+// 2. AUTH MIDDLEWARE FUNCTIONS
 // ==========================================
 
 // Auth Middleware: Verify JWT Bearer Token
@@ -174,7 +174,7 @@ app.post('/api/auth/login', authLimiter, (req, res) => {
 });
 
 // GET /api/auth/me
-app.get('/api/auth/me', authenticateToken, (req, res) => {
+app.get('/api/auth/me', authenticateToken, (req: any, res) => {
   return res.json({ user: req.user });
 });
 
@@ -186,7 +186,7 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
 app.get('/api/services', (req, res) => {
   try {
     const db = dbInstance.getData();
-    const services = (db.services || []).map(s => ({
+    const services = (db.services || []).map((s: any) => ({
       id: s.id || s._id,
       category: s.category || 'preventive',
       title: s.title,
@@ -209,7 +209,7 @@ app.get('/api/services', (req, res) => {
 app.get('/api/doctors', (req, res) => {
   try {
     const db = dbInstance.getData();
-    const doctors = (db.doctors || []).map(d => ({
+    const doctors = (db.doctors || []).map((d: any) => ({
       id: d.id || d._id,
       name: d.name,
       title: d.title,
@@ -245,7 +245,7 @@ app.get('/api/slots', (req, res) => {
       return res.status(400).json({ error: 'date parameter is required' });
     }
 
-    const isBlocked = db.blockedDates?.some(b => b.date === date) || false;
+    const isBlocked = db.blockedDates?.some((b: any) => b.date === date) || false;
     if (isBlocked) {
       return res.json({ slots: [] });
     }
@@ -276,8 +276,8 @@ app.get('/api/slots', (req, res) => {
 
     const bookedTimes = new Set(
       (db.appointments || [])
-        .filter(a => a.appointmentDate === date && a.status !== 'Canceled')
-        .map(a => a.appointmentTime)
+        .filter((a: any) => a.appointmentDate === date && a.status !== 'Canceled')
+        .map((a: any) => a.appointmentTime)
     );
 
     const availableSlots = validTimeSlots.filter(s => !bookedTimes.has(s));
@@ -298,7 +298,7 @@ app.get('/api/availability', (req, res) => {
       return res.json({ availabilities: db.availabilities || [] });
     }
 
-    const availability = db.availabilities?.find(a => a.date === dateParam);
+    const availability = db.availabilities?.find((a: any) => a.date === dateParam);
     res.json(availability || { date: dateParam, doctorIds: [] });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -320,7 +320,7 @@ app.get('/api/config', (req, res) => {
 // ==========================================
 
 // POST /api/appointments
-app.post('/api/appointments', authenticateToken, (req, res) => {
+app.post('/api/appointments', authenticateToken, (req: any, res) => {
   try {
     const { serviceTitle, serviceName, date, appointmentDate, time, appointmentTime, dentistName, doctorName } = req.body;
 
@@ -340,12 +340,12 @@ app.post('/api/appointments', authenticateToken, (req, res) => {
 
     const db = dbInstance.getData();
 
-    const isBlocked = db.blockedDates?.some(b => b.date === finalDate) || false;
+    const isBlocked = db.blockedDates?.some((b: any) => b.date === finalDate) || false;
     if (isBlocked) {
       return res.status(400).json({ error: 'The clinic is closed on the selected date.' });
     }
 
-    const doubleBooked = (db.appointments || []).some(a => {
+    const doubleBooked = (db.appointments || []).some((a: any) => {
       return a.appointmentDate === finalDate &&
              a.appointmentTime === finalTime &&
              a.status !== 'Canceled' &&
@@ -395,12 +395,12 @@ app.post('/api/appointments', authenticateToken, (req, res) => {
 });
 
 // GET /api/appointments/me
-app.get('/api/appointments/me', authenticateToken, (req, res) => {
+app.get('/api/appointments/me', authenticateToken, (req: any, res) => {
   try {
     const db = dbInstance.getData();
     const myAppointments = (db.appointments || [])
-      .filter(a => a.patientId === req.user!.id)
-      .map(a => ({
+      .filter((a: any) => a.patientId === req.user!.id)
+      .map((a: any) => ({
         id: a.id || a._id,
         patientId: a.patientId,
         date: a.appointmentDate,
@@ -417,12 +417,12 @@ app.get('/api/appointments/me', authenticateToken, (req, res) => {
 });
 
 // PUT /api/appointments/:id/cancel
-app.put('/api/appointments/:id/cancel', authenticateToken, (req, res) => {
+app.put('/api/appointments/:id/cancel', authenticateToken, (req: any, res) => {
   try {
     const { id } = req.params;
     const db = dbInstance.getData();
 
-    const appointment = (db.appointments || []).find(a => a.id === id || a._id === id);
+    const appointment = (db.appointments || []).find((a: any) => a.id === id || a._id === id);
 
     if (!appointment) {
       return res.status(404).json({ error: 'Appointment not found.' });
@@ -451,17 +451,17 @@ app.put('/api/appointments/:id/cancel', authenticateToken, (req, res) => {
 // ==========================================
 
 // GET /api/admin/config
-app.get('/api/admin/config', authenticateToken, requireAdmin, (req, res) => {
+app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const db = dbInstance.getData();
 
     const availabilityMap: Record<string, string[]> = {};
-    (db.availabilities || []).forEach(a => {
+    (db.availabilities || []).forEach((a: any) => {
       availabilityMap[a.date] = a.doctorIds;
     });
 
-    const formattedAppointments = (db.appointments || []).map(a => {
-      const patientUser = (db.users || []).find(u => u.id === a.patientId || u._id === a.patientId);
+    const formattedAppointments = (db.appointments || []).map((a: any) => {
+      const patientUser = (db.users || []).find((u: any) => u.id === a.patientId || u._id === a.patientId);
       return {
         id: a.id || a._id,
         patientId: a.patientId,
@@ -481,7 +481,7 @@ app.get('/api/admin/config', authenticateToken, requireAdmin, (req, res) => {
       doctors: db.doctors || [],
       appointments: formattedAppointments,
       availability: availabilityMap,
-      blockedDates: (db.blockedDates || []).map(b => ({ date: b.date, reason: b.reason || '' })),
+      blockedDates: (db.blockedDates || []).map((b: any) => ({ date: b.date, reason: b.reason || '' })),
       announcement: db.websiteConfig?.announcement || '',
       bookingCutoffTime: db.websiteConfig?.bookingCutoffTime || '14:00'
     });
@@ -492,11 +492,11 @@ app.get('/api/admin/config', authenticateToken, requireAdmin, (req, res) => {
 });
 
 // GET /api/admin/appointments
-app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req, res) => {
+app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const db = dbInstance.getData();
-    const allAppointments = (db.appointments || []).map(a => {
-      const patientUser = (db.users || []).find(u => u.id === a.patientId || u._id === a.patientId);
+    const allAppointments = (db.appointments || []).map((a: any) => {
+      const patientUser = (db.users || []).find((u: any) => u.id === a.patientId || u._id === a.patientId);
       return {
         id: a.id || a._id,
         patientId: a.patientId,
@@ -518,7 +518,7 @@ app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req, res) =
 });
 
 // POST /api/admin/appointments
-app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req, res) => {
+app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { patientId, patientName, serviceTitle, date, appointmentDate, time, appointmentTime, dentistName, status } = req.body;
 
@@ -533,7 +533,7 @@ app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req, res) 
     const finalStatus: AppointmentStatus = status && validStatuses.includes(status) ? status : 'Confirmed';
 
     const db = dbInstance.getData();
-    const patientUser = db.users.find(u => u.id === patientId || u._id === patientId);
+    const patientUser = db.users.find((u: any) => u.id === patientId || u._id === patientId);
 
     const newAppId = generateId();
     const newAppointment = {
@@ -575,7 +575,7 @@ app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req, res) 
 });
 
 // PUT /api/admin/appointments/:id/status
-app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (req, res) => {
+app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -589,7 +589,7 @@ app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (
     }
 
     const db = dbInstance.getData();
-    const appointment = (db.appointments || []).find(a => a.id === id || a._id === id);
+    const appointment = (db.appointments || []).find((a: any) => a.id === id || a._id === id);
 
     if (!appointment) {
       return res.status(404).json({ error: 'Appointment not found.' });
@@ -607,7 +607,7 @@ app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (
 });
 
 // POST /api/admin/services
-app.post('/api/admin/services', authenticateToken, requireAdmin, (req, res) => {
+app.post('/api/admin/services', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { title, name, category, description, duration, price, promotionActive, promotionDetails, discountPercent, discountAmount } = req.body;
 
@@ -618,7 +618,7 @@ app.post('/api/admin/services', authenticateToken, requireAdmin, (req, res) => {
     }
 
     const db = dbInstance.getData();
-    const existing = db.services.find(s => s.title.toLowerCase() === finalTitle.toLowerCase());
+    const existing = db.services.find((s: any) => s.title.toLowerCase() === finalTitle.toLowerCase());
     if (existing) {
       return res.status(400).json({ error: 'A service with this title already exists.' });
     }
@@ -652,12 +652,12 @@ app.post('/api/admin/services', authenticateToken, requireAdmin, (req, res) => {
 });
 
 // PUT /api/admin/services/:title
-app.put('/api/admin/services/:title', authenticateToken, requireAdmin, (req, res) => {
+app.put('/api/admin/services/:title', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const identifier = decodeURIComponent(req.params.title);
     const db = dbInstance.getData();
 
-    const service = db.services.find(s => s.id === identifier || s._id === identifier || s.title.toLowerCase() === identifier.toLowerCase());
+    const service = db.services.find((s: any) => s.id === identifier || s._id === identifier || s.title.toLowerCase() === identifier.toLowerCase());
 
     if (!service) {
       return res.status(404).json({ error: 'Service not found.' });
@@ -686,12 +686,12 @@ app.put('/api/admin/services/:title', authenticateToken, requireAdmin, (req, res
 });
 
 // DELETE /api/admin/services/:title
-app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req, res) => {
+app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const identifier = decodeURIComponent(req.params.title);
     const db = dbInstance.getData();
 
-    const index = db.services.findIndex(s => s.id === identifier || s._id === identifier || s.title.toLowerCase() === identifier.toLowerCase());
+    const index = db.services.findIndex((s: any) => s.id === identifier || s._id === identifier || s.title.toLowerCase() === identifier.toLowerCase());
 
     if (index === -1) {
       return res.status(404).json({ error: 'Service not found.' });
@@ -708,7 +708,7 @@ app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req, 
 });
 
 // POST /api/admin/doctors
-app.post('/api/admin/doctors', authenticateToken, requireAdmin, (req, res) => {
+app.post('/api/admin/doctors', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { name, title, bio, imageUrl, isFeatured } = req.body;
 
@@ -719,7 +719,7 @@ app.post('/api/admin/doctors', authenticateToken, requireAdmin, (req, res) => {
     const db = dbInstance.getData();
 
     if (isFeatured) {
-      const featuredCount = (db.doctors || []).filter(d => d.isFeatured).length;
+      const featuredCount = (db.doctors || []).filter((d: any) => d.isFeatured).length;
       if (featuredCount >= 3) {
         return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
       }
@@ -750,12 +750,12 @@ app.post('/api/admin/doctors', authenticateToken, requireAdmin, (req, res) => {
 });
 
 // PUT /api/admin/doctors/:id
-app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req, res) => {
+app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
     const db = dbInstance.getData();
 
-    const doctor = db.doctors.find(d => d.id === id || d._id === id);
+    const doctor = db.doctors.find((d: any) => d.id === id || d._id === id);
 
     if (!doctor) {
       return res.status(404).json({ error: 'Doctor not found.' });
@@ -764,7 +764,7 @@ app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req, res) =>
     const { name, title, bio, imageUrl, isFeatured } = req.body;
 
     if (isFeatured && !doctor.isFeatured) {
-      const otherFeaturedCount = (db.doctors || []).filter(d => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id).length;
+      const otherFeaturedCount = (db.doctors || []).filter((d: any) => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id).length;
       if (otherFeaturedCount >= 3) {
         return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
       }
@@ -787,19 +787,19 @@ app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req, res) =>
 });
 
 // PUT /api/admin/doctors/:id/feature
-app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req, res) => {
+app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
     const db = dbInstance.getData();
 
-    const doctor = db.doctors.find(d => d.id === id || d._id === id);
+    const doctor = db.doctors.find((d: any) => d.id === id || d._id === id);
 
     if (!doctor) {
       return res.status(404).json({ error: 'Doctor not found.' });
     }
 
     if (!doctor.isFeatured) {
-      const currentlyFeatured = (db.doctors || []).filter(d => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id).length;
+      const currentlyFeatured = (db.doctors || []).filter((d: any) => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id).length;
       if (currentlyFeatured >= 3) {
         return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
       }
@@ -819,12 +819,12 @@ app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req,
 });
 
 // DELETE /api/admin/doctors/:id
-app.delete('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req, res) => {
+app.delete('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
     const db = dbInstance.getData();
 
-    const index = db.doctors.findIndex(d => d.id === id || d._id === id);
+    const index = db.doctors.findIndex((d: any) => d.id === id || d._id === id);
 
     if (index === -1) {
       return res.status(404).json({ error: 'Doctor not found.' });
@@ -841,7 +841,7 @@ app.delete('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req, res)
 });
 
 // PUT /api/admin/availability
-app.put('/api/admin/availability', authenticateToken, requireAdmin, (req, res) => {
+app.put('/api/admin/availability', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date, doctorIds } = req.body;
 
@@ -850,7 +850,7 @@ app.put('/api/admin/availability', authenticateToken, requireAdmin, (req, res) =
     }
 
     const db = dbInstance.getData();
-    let availability = db.availabilities?.find(a => a.date === date);
+    let availability = db.availabilities?.find((a: any) => a.date === date);
 
     if (availability) {
       availability.doctorIds = doctorIds;
@@ -878,12 +878,12 @@ app.put('/api/admin/availability', authenticateToken, requireAdmin, (req, res) =
 });
 
 // DELETE /api/admin/availability/:date
-app.delete('/api/admin/availability/:date', authenticateToken, requireAdmin, (req, res) => {
+app.delete('/api/admin/availability/:date', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date } = req.params;
     const db = dbInstance.getData();
 
-    const index = (db.availabilities || []).findIndex(a => a.date === date);
+    const index = (db.availabilities || []).findIndex((a: any) => a.date === date);
 
     if (index !== -1) {
       db.availabilities.splice(index, 1);
@@ -898,7 +898,7 @@ app.delete('/api/admin/availability/:date', authenticateToken, requireAdmin, (re
 });
 
 // POST /api/admin/blocked-dates
-app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req, res) => {
+app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date, reason } = req.body;
 
@@ -907,7 +907,7 @@ app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req, res)
     }
 
     const db = dbInstance.getData();
-    const existing = (db.blockedDates || []).find(b => b.date === date);
+    const existing = (db.blockedDates || []).find((b: any) => b.date === date);
 
     if (existing) {
       existing.reason = reason || existing.reason;
@@ -931,12 +931,12 @@ app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req, res)
 });
 
 // DELETE /api/admin/blocked-dates/:date
-app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (req, res) => {
+app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date } = req.params;
     const db = dbInstance.getData();
 
-    const index = (db.blockedDates || []).findIndex(b => b.date === date);
+    const index = (db.blockedDates || []).findIndex((b: any) => b.date === date);
 
     if (index !== -1) {
       db.blockedDates.splice(index, 1);
@@ -951,7 +951,7 @@ app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (r
 });
 
 // PUT /api/admin/announcement
-app.put('/api/admin/announcement', authenticateToken, requireAdmin, (req, res) => {
+app.put('/api/admin/announcement', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { text } = req.body;
     const db = dbInstance.getData();
@@ -968,7 +968,7 @@ app.put('/api/admin/announcement', authenticateToken, requireAdmin, (req, res) =
 });
 
 // PUT /api/admin/cutoff
-app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req, res) => {
+app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { time } = req.body;
     const db = dbInstance.getData();
@@ -985,10 +985,84 @@ app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req, res) => {
 });
 
 // ==========================================
-// 7. START SERVER
+// 7. ROOT ROUTE & 404 HANDLER
+// ==========================================
+
+// GET / - API Status
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    message: 'Dental Clinic API is running',
+    version: '1.0.0',
+    endpoints: {
+      public: [
+        'GET /api/services',
+        'GET /api/doctors',
+        'GET /api/slots',
+        'GET /api/public/announcement'
+      ],
+      auth: [
+        'POST /api/auth/register',
+        'POST /api/auth/login',
+        'GET /api/auth/me'
+      ],
+      patient: [
+        'POST /api/appointments',
+        'GET /api/appointments/me',
+        'PUT /api/appointments/:id/cancel'
+      ],
+      admin: [
+        'GET /api/admin/config',
+        'GET /api/admin/appointments',
+        'POST /api/admin/appointments',
+        'PUT /api/admin/appointments/:id/status',
+        'POST /api/admin/services',
+        'PUT /api/admin/services/:title',
+        'DELETE /api/admin/services/:title',
+        'POST /api/admin/doctors',
+        'PUT /api/admin/doctors/:id',
+        'PUT /api/admin/doctors/:id/feature',
+        'DELETE /api/admin/doctors/:id',
+        'PUT /api/admin/availability',
+        'DELETE /api/admin/availability/:date',
+        'POST /api/admin/blocked-dates',
+        'DELETE /api/admin/blocked-dates/:date',
+        'PUT /api/admin/announcement',
+        'PUT /api/admin/cutoff'
+      ]
+    }
+  });
+});
+
+// GET /health - Health Check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// 404 Handler - Catch All Other Routes
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.method} ${req.path} does not exist`,
+    available: {
+      public: '/api/services, /api/doctors, /api/slots, /api/public/announcement',
+      auth: '/api/auth/login, /api/auth/register, /api/auth/me',
+      patient: '/api/appointments, /api/appointments/me, /api/appointments/:id/cancel',
+      admin: '/api/admin/* (requires admin token)'
+    }
+  });
+});
+
+// ==========================================
+// 8. START SERVER
 // ==========================================
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Dental Clinic API Server running on http://localhost:${PORT}`);
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ Health check: http://localhost:${PORT}/health`);
 });
