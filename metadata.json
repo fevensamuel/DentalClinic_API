@@ -1,0 +1,6 @@
+{
+  "name": "Dental Clinic Management System",
+  "description": "Dental Clinic REST API backend powered by Node.js, Express, and JWT Authentication with full endpoints for services, doctors, appointments, availability, and admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
