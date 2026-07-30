@@ -1,6 +1,5 @@
-// server.ts - BACKEND ONLY VERSION
-
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -12,18 +11,18 @@ const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dental_clinic_super_secret_key_2026';
 
-// Security & Middleware
-app.use(helmet({
-  contentSecurityPolicy: false,
-}));
+// ==========================================
+// 1. MIDDLEWARE CONFIGURATION (FIRST!)
+// ==========================================
 
-// CORS - Allow Vercel frontends
+// CORS Configuration
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
+  'http://localhost:5174',
   'https://dental-clinic-website.vercel.app',
   'https://dental-clinic-admin.vercel.app',
-  // Add your custom domains
+  'https://dental-clinic-backend-0vjn.onrender.com',
 ];
 
 app.use(cors({
@@ -31,15 +30,22 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log('🚫 Blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
 
-// Auth Rate Limiting
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
+
+// Rate Limiting
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -49,136 +55,940 @@ const authLimiter = rateLimit({
 });
 
 // ==========================================
-// AUTHENTICATION ENDPOINTS (Same as yours)
+// 2. AUTH MIDDLEWARE FUNCTIONS (DEFINE HERE!)
+// ==========================================
+
+// Auth Middleware: Verify JWT Bearer Token
+const authenticateToken = (req: any, res: any, next: any) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access denied. Bearer token missing.' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(403).json({ error: 'Invalid or expired authorization token.' });
+  }
+};
+
+// Admin Middleware: Verify Admin Role
+const requireAdmin = (req: any, res: any, next: any) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden. Administrator privileges required.' });
+  }
+  next();
+};
+
+// ==========================================
+// 3. AUTHENTICATION ENDPOINTS
 // ==========================================
 
 // POST /api/auth/register
 app.post('/api/auth/register', authLimiter, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  const { name, phone, email, password } = req.body;
+
+  if (!name || !phone || !password) {
+    return res.status(400).json({ error: 'Name, phone number, and password are required.' });
+  }
+
+  const db = dbInstance.getData();
+
+  const existingPhone = db.users.find(u => u.phone && u.phone.trim() === phone.trim());
+  if (existingPhone) {
+    return res.status(400).json({ error: 'An account with this phone number already exists.' });
+  }
+
+  if (email && email.trim()) {
+    const existingEmail = db.users.find(u => u.email && u.email.toLowerCase() === email.trim().toLowerCase());
+    if (existingEmail) {
+      return res.status(400).json({ error: 'An account with this email address already exists.' });
+    }
+  }
+
+  const passwordHash = bcrypt.hashSync(password, 10);
+  const newUserId = generateId();
+
+  const newUser = {
+    _id: newUserId,
+    id: newUserId,
+    name: name.trim(),
+    phone: phone.trim(),
+    email: email && email.trim() ? email.trim().toLowerCase() : undefined,
+    passwordHash,
+    role: 'patient' as const,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  db.users.push(newUser);
+  dbInstance.save();
+
+  const userPayload = {
+    id: newUser.id,
+    name: newUser.name,
+    phone: newUser.phone,
+    email: newUser.email,
+    role: newUser.role
+  };
+
+  const token = jwt.sign(userPayload, JWT_SECRET, { expiresIn: '24h' });
+
+  return res.status(201).json({ token, user: userPayload });
 });
 
 // POST /api/auth/login
 app.post('/api/auth/login', authLimiter, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  const { email, phone, password } = req.body;
+
+  if ((!email && !phone) || !password) {
+    return res.status(400).json({ error: 'Email or phone and password are required.' });
+  }
+
+  const db = dbInstance.getData();
+  const user = db.users.find(u => {
+    if (email && u.email && u.email.toLowerCase() === email.trim().toLowerCase()) return true;
+    if (phone && u.phone && u.phone.trim() === phone.trim()) return true;
+    return false;
+  });
+
+  if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+    return res.status(401).json({ error: 'Invalid credentials.' });
+  }
+
+  const userPayload = {
+    id: user.id || user._id,
+    name: user.name,
+    phone: user.phone || '+251911000000',
+    email: user.email,
+    role: user.role
+  };
+
+  const token = jwt.sign(userPayload, JWT_SECRET, { expiresIn: '24h' });
+
+  return res.json({ token, user: userPayload });
 });
 
 // GET /api/auth/me
 app.get('/api/auth/me', authenticateToken, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  return res.json({ user: req.user });
 });
 
 // ==========================================
-// PUBLIC ENDPOINTS (Same as yours)
+// 4. PUBLIC ENDPOINTS
 // ==========================================
 
+// GET /api/services
 app.get('/api/services', (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const db = dbInstance.getData();
+    const services = (db.services || []).map(s => ({
+      id: s.id || s._id,
+      category: s.category || 'preventive',
+      title: s.title,
+      description: s.description || '',
+      price: typeof s.price === 'number' ? `${s.price} ETB` : s.price || '1500 ETB',
+      duration: s.duration || '45 mins',
+      promotionActive: Boolean(s.promotionActive),
+      promotionDetails: s.promotionDetails || '',
+      discountPercent: s.discountPercent ? String(s.discountPercent) : '',
+      discountAmount: s.discountAmount ? String(s.discountAmount) : ''
+    }));
+    res.json(services);
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// GET /api/doctors
 app.get('/api/doctors', (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const db = dbInstance.getData();
+    const doctors = (db.doctors || []).map(d => ({
+      id: d.id || d._id,
+      name: d.name,
+      title: d.title,
+      bio: d.bio || '',
+      imageUrl: d.imageUrl || '',
+      isFeatured: Boolean(d.isFeatured)
+    }));
+    res.json(doctors);
+  } catch (error) {
+    console.error('Error fetching doctors:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// GET /api/public/announcement
 app.get('/api/public/announcement', (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const db = dbInstance.getData();
+    res.json({ text: db.websiteConfig?.announcement || '' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// GET /api/slots
 app.get('/api/slots', (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const date = req.query.date as string;
+    const serviceTitle = (req.query.serviceTitle as string) || (req.query.service as string);
+    const db = dbInstance.getData();
+
+    if (!date) {
+      return res.status(400).json({ error: 'date parameter is required' });
+    }
+
+    const isBlocked = db.blockedDates?.some(b => b.date === date) || false;
+    if (isBlocked) {
+      return res.json({ slots: [] });
+    }
+
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    if (date < todayStr) {
+      return res.json({ slots: [] });
+    }
+
+    const allSlots = [
+      '09:00 AM', '10:00 AM', '11:00 AM',
+      '12:00 PM', '01:00 PM', '02:00 PM',
+      '03:00 PM', '04:00 PM'
+    ];
+
+    let validTimeSlots = allSlots;
+    if (date === todayStr) {
+      const currentHour = now.getHours();
+      validTimeSlots = allSlots.filter(slot => {
+        const parts = slot.split(' ');
+        let hour = parseInt(parts[0].split(':')[0], 10);
+        if (parts[1] === 'PM' && hour !== 12) hour += 12;
+        if (parts[1] === 'AM' && hour === 12) hour = 0;
+        return hour > currentHour;
+      });
+    }
+
+    const bookedTimes = new Set(
+      (db.appointments || [])
+        .filter(a => a.appointmentDate === date && a.status !== 'Canceled')
+        .map(a => a.appointmentTime)
+    );
+
+    const availableSlots = validTimeSlots.filter(s => !bookedTimes.has(s));
+    res.json({ slots: availableSlots });
+  } catch (error) {
+    console.error('Error fetching slots:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/availability
+app.get('/api/availability', (req, res) => {
+  try {
+    const dateParam = req.query.date as string;
+    const db = dbInstance.getData();
+
+    if (!dateParam) {
+      return res.json({ availabilities: db.availabilities || [] });
+    }
+
+    const availability = db.availabilities?.find(a => a.date === dateParam);
+    res.json(availability || { date: dateParam, doctorIds: [] });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/config
+app.get('/api/config', (req, res) => {
+  try {
+    const db = dbInstance.getData();
+    res.json(db.websiteConfig || { announcement: '', bookingCutoffTime: '14:00' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // ==========================================
-// PATIENT ENDPOINTS (Same as yours)
+// 5. PATIENT ENDPOINTS
 // ==========================================
 
+// POST /api/appointments
 app.post('/api/appointments', authenticateToken, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { serviceTitle, serviceName, date, appointmentDate, time, appointmentTime, dentistName, doctorName } = req.body;
+
+    const finalServiceTitle = serviceTitle || serviceName || 'General Consultation';
+    const finalDate = appointmentDate || date;
+    const finalTime = appointmentTime || time;
+    const finalDentistName = dentistName || doctorName || 'Assigned Specialist';
+
+    if (!finalDate || !finalTime) {
+      return res.status(400).json({ error: 'Appointment date and time are required.' });
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (finalDate < todayStr) {
+      return res.status(400).json({ error: 'Cannot book appointments in the past.' });
+    }
+
+    const db = dbInstance.getData();
+
+    const isBlocked = db.blockedDates?.some(b => b.date === finalDate) || false;
+    if (isBlocked) {
+      return res.status(400).json({ error: 'The clinic is closed on the selected date.' });
+    }
+
+    const doubleBooked = (db.appointments || []).some(a => {
+      return a.appointmentDate === finalDate &&
+             a.appointmentTime === finalTime &&
+             a.status !== 'Canceled' &&
+             a.dentistName?.toLowerCase() === finalDentistName.toLowerCase();
+    });
+
+    if (doubleBooked) {
+      return res.status(400).json({ error: 'This time slot is already booked for the selected specialist.' });
+    }
+
+    const newAppId = generateId();
+    const newAppointment = {
+      _id: newAppId,
+      id: newAppId,
+      patientId: req.user!.id,
+      patientName: req.user!.name,
+      serviceTitle: finalServiceTitle,
+      appointmentDate: finalDate,
+      appointmentTime: finalTime,
+      dentistName: finalDentistName,
+      status: 'Pending' as AppointmentStatus,
+      autoCanceled: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    db.appointments = db.appointments || [];
+    db.appointments.push(newAppointment);
+    dbInstance.save();
+
+    res.status(201).json({
+      appointment: {
+        id: newAppointment.id,
+        patientId: newAppointment.patientId,
+        date: newAppointment.appointmentDate,
+        time: newAppointment.appointmentTime,
+        dentist: newAppointment.dentistName,
+        status: newAppointment.status,
+        service: newAppointment.serviceTitle,
+        autoCanceled: newAppointment.autoCanceled
+      }
+    });
+  } catch (error) {
+    console.error('Error booking appointment:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// GET /api/appointments/me
 app.get('/api/appointments/me', authenticateToken, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const db = dbInstance.getData();
+    const myAppointments = (db.appointments || [])
+      .filter(a => a.patientId === req.user!.id)
+      .map(a => ({
+        id: a.id || a._id,
+        patientId: a.patientId,
+        date: a.appointmentDate,
+        time: a.appointmentTime,
+        dentist: a.dentistName,
+        status: a.status,
+        service: a.serviceTitle,
+        autoCanceled: Boolean(a.autoCanceled)
+      }));
+    res.json(myAppointments);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// PUT /api/appointments/:id/cancel
 app.put('/api/appointments/:id/cancel', authenticateToken, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { id } = req.params;
+    const db = dbInstance.getData();
+
+    const appointment = (db.appointments || []).find(a => a.id === id || a._id === id);
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found.' });
+    }
+
+    if (req.user!.role !== 'admin' && appointment.patientId !== req.user!.id) {
+      return res.status(403).json({ error: 'Unauthorized to cancel this appointment.' });
+    }
+
+    if (!['Pending', 'Confirmed'].includes(appointment.status) && req.user!.role !== 'admin') {
+      return res.status(400).json({ error: 'Only Pending or Confirmed appointments can be canceled.' });
+    }
+
+    appointment.status = 'Canceled';
+    appointment.updatedAt = new Date().toISOString();
+    dbInstance.save();
+
+    res.json({ success: true, message: 'Appointment canceled successfully.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // ==========================================
-// ADMIN ENDPOINTS (Same as yours)
+// 6. ADMIN ENDPOINTS
 // ==========================================
 
+// GET /api/admin/config
 app.get('/api/admin/config', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const db = dbInstance.getData();
+
+    const availabilityMap: Record<string, string[]> = {};
+    (db.availabilities || []).forEach(a => {
+      availabilityMap[a.date] = a.doctorIds;
+    });
+
+    const formattedAppointments = (db.appointments || []).map(a => {
+      const patientUser = (db.users || []).find(u => u.id === a.patientId || u._id === a.patientId);
+      return {
+        id: a.id || a._id,
+        patientId: a.patientId,
+        patientName: a.patientName || (patientUser ? patientUser.name : 'Unknown Patient'),
+        patientPhone: patientUser ? patientUser.phone : '+251922000100',
+        date: a.appointmentDate,
+        time: a.appointmentTime,
+        dentist: a.dentistName,
+        status: a.status,
+        service: a.serviceTitle,
+        autoCanceled: Boolean(a.autoCanceled)
+      };
+    });
+
+    res.json({
+      services: db.services || [],
+      doctors: db.doctors || [],
+      appointments: formattedAppointments,
+      availability: availabilityMap,
+      blockedDates: (db.blockedDates || []).map(b => ({ date: b.date, reason: b.reason || '' })),
+      announcement: db.websiteConfig?.announcement || '',
+      bookingCutoffTime: db.websiteConfig?.bookingCutoffTime || '14:00'
+    });
+  } catch (error) {
+    console.error('Error fetching admin config:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// GET /api/admin/appointments
 app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const db = dbInstance.getData();
+    const allAppointments = (db.appointments || []).map(a => {
+      const patientUser = (db.users || []).find(u => u.id === a.patientId || u._id === a.patientId);
+      return {
+        id: a.id || a._id,
+        patientId: a.patientId,
+        patientName: a.patientName || (patientUser ? patientUser.name : 'Unknown Patient'),
+        patientPhone: patientUser ? patientUser.phone : '+251922000100',
+        date: a.appointmentDate,
+        time: a.appointmentTime,
+        dentist: a.dentistName,
+        status: a.status,
+        service: a.serviceTitle,
+        autoCanceled: Boolean(a.autoCanceled)
+      };
+    });
+    res.json(allAppointments);
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// POST /api/admin/appointments
 app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { patientId, patientName, serviceTitle, date, appointmentDate, time, appointmentTime, dentistName, status } = req.body;
+
+    const finalDate = appointmentDate || date;
+    const finalTime = appointmentTime || time;
+
+    if (!patientId || !serviceTitle || !finalDate || !finalTime || !dentistName) {
+      return res.status(400).json({ error: 'patientId, serviceTitle, date, time, and dentistName are required.' });
+    }
+
+    const validStatuses: AppointmentStatus[] = ['Pending', 'Confirmed', 'Completed', 'Arrived', 'No Show', 'Canceled'];
+    const finalStatus: AppointmentStatus = status && validStatuses.includes(status) ? status : 'Confirmed';
+
+    const db = dbInstance.getData();
+    const patientUser = db.users.find(u => u.id === patientId || u._id === patientId);
+
+    const newAppId = generateId();
+    const newAppointment = {
+      _id: newAppId,
+      id: newAppId,
+      patientId,
+      patientName: patientName || (patientUser ? patientUser.name : 'Patient'),
+      serviceTitle,
+      appointmentDate: finalDate,
+      appointmentTime: finalTime,
+      dentistName,
+      status: finalStatus,
+      autoCanceled: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    db.appointments = db.appointments || [];
+    db.appointments.push(newAppointment);
+    dbInstance.save();
+
+    const formattedApp = {
+      id: newAppointment.id,
+      patientId: newAppointment.patientId,
+      patientName: newAppointment.patientName,
+      date: newAppointment.appointmentDate,
+      time: newAppointment.appointmentTime,
+      dentist: newAppointment.dentistName,
+      status: newAppointment.status,
+      service: newAppointment.serviceTitle,
+      autoCanceled: newAppointment.autoCanceled
+    };
+
+    res.status(201).json({ appointment: formattedApp });
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// PUT /api/admin/appointments/:id/status
 app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const validStatuses: AppointmentStatus[] = ['Pending', 'Confirmed', 'Completed', 'Arrived', 'No Show', 'Canceled'];
+
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` 
+      });
+    }
+
+    const db = dbInstance.getData();
+    const appointment = (db.appointments || []).find(a => a.id === id || a._id === id);
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found.' });
+    }
+
+    appointment.status = status;
+    appointment.updatedAt = new Date().toISOString();
+    dbInstance.save();
+
+    res.json({ success: true, message: 'Appointment status updated.', appointment });
+  } catch (error) {
+    console.error('Error updating appointment status:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// POST /api/admin/services
 app.post('/api/admin/services', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { title, name, category, description, duration, price, promotionActive, promotionDetails, discountPercent, discountAmount } = req.body;
+
+    const finalTitle = title || name;
+
+    if (!finalTitle || price === undefined) {
+      return res.status(400).json({ error: 'Service title and price are required.' });
+    }
+
+    const db = dbInstance.getData();
+    const existing = db.services.find(s => s.title.toLowerCase() === finalTitle.toLowerCase());
+    if (existing) {
+      return res.status(400).json({ error: 'A service with this title already exists.' });
+    }
+
+    const newId = generateId();
+    const newService = {
+      _id: newId,
+      id: newId,
+      category: category || 'preventive',
+      title: finalTitle,
+      description: description || '',
+      duration: duration || '45 mins',
+      price: typeof price === 'number' ? price : price,
+      promotionActive: Boolean(promotionActive),
+      promotionDetails: promotionDetails || '',
+      discountPercent: discountPercent || '0%',
+      discountAmount: discountAmount || '0 ETB',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    db.services = db.services || [];
+    db.services.push(newService);
+    dbInstance.save();
+
+    res.status(201).json({ service: newService });
+  } catch (error) {
+    console.error('Error creating service:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// PUT /api/admin/services/:title
 app.put('/api/admin/services/:title', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const identifier = decodeURIComponent(req.params.title);
+    const db = dbInstance.getData();
+
+    const service = db.services.find(s => s.id === identifier || s._id === identifier || s.title.toLowerCase() === identifier.toLowerCase());
+
+    if (!service) {
+      return res.status(404).json({ error: 'Service not found.' });
+    }
+
+    const { title, category, description, duration, price, promotionActive, promotionDetails, discountPercent, discountAmount } = req.body;
+
+    if (title) service.title = title;
+    if (category) service.category = category;
+    if (description !== undefined) service.description = description;
+    if (duration) service.duration = duration;
+    if (price !== undefined) service.price = price;
+    if (promotionActive !== undefined) service.promotionActive = Boolean(promotionActive);
+    if (promotionDetails !== undefined) service.promotionDetails = promotionDetails;
+    if (discountPercent !== undefined) service.discountPercent = discountPercent;
+    if (discountAmount !== undefined) service.discountAmount = discountAmount;
+
+    service.updatedAt = new Date().toISOString();
+    dbInstance.save();
+
+    res.json({ service });
+  } catch (error) {
+    console.error('Error updating service:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// DELETE /api/admin/services/:title
 app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const identifier = decodeURIComponent(req.params.title);
+    const db = dbInstance.getData();
+
+    const index = db.services.findIndex(s => s.id === identifier || s._id === identifier || s.title.toLowerCase() === identifier.toLowerCase());
+
+    if (index === -1) {
+      return res.status(404).json({ error: 'Service not found.' });
+    }
+
+    db.services.splice(index, 1);
+    dbInstance.save();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting service:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// POST /api/admin/doctors
 app.post('/api/admin/doctors', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { name, title, bio, imageUrl, isFeatured } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Doctor name is required.' });
+    }
+
+    const db = dbInstance.getData();
+
+    if (isFeatured) {
+      const featuredCount = (db.doctors || []).filter(d => d.isFeatured).length;
+      if (featuredCount >= 3) {
+        return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
+      }
+    }
+
+    const newId = generateId();
+    const newDoctor = {
+      _id: newId,
+      id: newId,
+      name,
+      title: title || 'Specialist Doctor',
+      bio: bio || '',
+      imageUrl: imageUrl || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&q=80',
+      isFeatured: Boolean(isFeatured),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    db.doctors = db.doctors || [];
+    db.doctors.push(newDoctor);
+    dbInstance.save();
+
+    res.status(201).json({ doctor: newDoctor });
+  } catch (error) {
+    console.error('Error creating doctor:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// PUT /api/admin/doctors/:id
 app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { id } = req.params;
+    const db = dbInstance.getData();
+
+    const doctor = db.doctors.find(d => d.id === id || d._id === id);
+
+    if (!doctor) {
+      return res.status(404).json({ error: 'Doctor not found.' });
+    }
+
+    const { name, title, bio, imageUrl, isFeatured } = req.body;
+
+    if (isFeatured && !doctor.isFeatured) {
+      const otherFeaturedCount = (db.doctors || []).filter(d => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id).length;
+      if (otherFeaturedCount >= 3) {
+        return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
+      }
+    }
+
+    if (name) doctor.name = name;
+    if (title) doctor.title = title;
+    if (bio !== undefined) doctor.bio = bio;
+    if (imageUrl !== undefined) doctor.imageUrl = imageUrl;
+    if (isFeatured !== undefined) doctor.isFeatured = Boolean(isFeatured);
+
+    doctor.updatedAt = new Date().toISOString();
+    dbInstance.save();
+
+    res.json({ doctor });
+  } catch (error) {
+    console.error('Error updating doctor:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// PUT /api/admin/doctors/:id/feature
 app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { id } = req.params;
+    const db = dbInstance.getData();
+
+    const doctor = db.doctors.find(d => d.id === id || d._id === id);
+
+    if (!doctor) {
+      return res.status(404).json({ error: 'Doctor not found.' });
+    }
+
+    if (!doctor.isFeatured) {
+      const currentlyFeatured = (db.doctors || []).filter(d => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id).length;
+      if (currentlyFeatured >= 3) {
+        return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
+      }
+      doctor.isFeatured = true;
+    } else {
+      doctor.isFeatured = false;
+    }
+
+    doctor.updatedAt = new Date().toISOString();
+    dbInstance.save();
+
+    res.json({ doctor });
+  } catch (error) {
+    console.error('Error toggling doctor feature:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// DELETE /api/admin/doctors/:id
 app.delete('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { id } = req.params;
+    const db = dbInstance.getData();
+
+    const index = db.doctors.findIndex(d => d.id === id || d._id === id);
+
+    if (index === -1) {
+      return res.status(404).json({ error: 'Doctor not found.' });
+    }
+
+    db.doctors.splice(index, 1);
+    dbInstance.save();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting doctor:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// PUT /api/admin/availability
 app.put('/api/admin/availability', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { date, doctorIds } = req.body;
+
+    if (!date || !Array.isArray(doctorIds)) {
+      return res.status(400).json({ error: 'Date and doctorIds array are required.' });
+    }
+
+    const db = dbInstance.getData();
+    let availability = db.availabilities?.find(a => a.date === date);
+
+    if (availability) {
+      availability.doctorIds = doctorIds;
+      availability.updatedAt = new Date().toISOString();
+    } else {
+      const newId = generateId();
+      availability = {
+        _id: newId,
+        id: newId,
+        date,
+        doctorIds,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      db.availabilities = db.availabilities || [];
+      db.availabilities.push(availability);
+    }
+
+    dbInstance.save();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error setting availability:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// DELETE /api/admin/availability/:date
 app.delete('/api/admin/availability/:date', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { date } = req.params;
+    const db = dbInstance.getData();
+
+    const index = (db.availabilities || []).findIndex(a => a.date === date);
+
+    if (index !== -1) {
+      db.availabilities.splice(index, 1);
+      dbInstance.save();
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting availability:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// POST /api/admin/blocked-dates
 app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { date, reason } = req.body;
+
+    if (!date) {
+      return res.status(400).json({ error: 'Date is required.' });
+    }
+
+    const db = dbInstance.getData();
+    const existing = (db.blockedDates || []).find(b => b.date === date);
+
+    if (existing) {
+      existing.reason = reason || existing.reason;
+    } else {
+      const newId = generateId();
+      db.blockedDates = db.blockedDates || [];
+      db.blockedDates.push({
+        _id: newId,
+        id: newId,
+        date,
+        reason: reason || 'Clinic Closed'
+      });
+    }
+
+    dbInstance.save();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error adding blocked date:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// DELETE /api/admin/blocked-dates/:date
 app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { date } = req.params;
+    const db = dbInstance.getData();
+
+    const index = (db.blockedDates || []).findIndex(b => b.date === date);
+
+    if (index !== -1) {
+      db.blockedDates.splice(index, 1);
+      dbInstance.save();
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error removing blocked date:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// PUT /api/admin/announcement
 app.put('/api/admin/announcement', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { text } = req.body;
+    const db = dbInstance.getData();
+
+    db.websiteConfig = db.websiteConfig || { announcement: '', bookingCutoffTime: '14:00' };
+    db.websiteConfig.announcement = text || '';
+    dbInstance.save();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating announcement:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// PUT /api/admin/cutoff
 app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req, res) => {
-  // ... YOUR EXISTING CODE ...
+  try {
+    const { time } = req.body;
+    const db = dbInstance.getData();
+
+    db.websiteConfig = db.websiteConfig || { announcement: '', bookingCutoffTime: '14:00' };
+    db.websiteConfig.bookingCutoffTime = time || '14:00';
+    dbInstance.save();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating cutoff time:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // ==========================================
-// START SERVER (NO FRONTEND SERVING)
+// 7. START SERVER
 // ==========================================
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Dental Clinic API Server running on http://localhost:${PORT}`);
+  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
 });
