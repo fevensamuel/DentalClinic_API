@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 import { dbInstance, generateId, AppointmentStatus } from './src/database';
 
 const app = express();
@@ -55,10 +57,192 @@ const authLimiter = rateLimit({
 });
 
 // ==========================================
-// 2. AUTH MIDDLEWARE FUNCTIONS
+// 2. SWAGGER CONFIGURATION
 // ==========================================
 
-// Auth Middleware: Verify JWT Bearer Token
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Dental Clinic API',
+      version: '1.0.0',
+      description: 'Complete REST API for Dental Clinic Management System',
+      contact: {
+        name: 'Dental Clinic Support',
+        email: 'support@clinic.com'
+      },
+      license: {
+        name: 'MIT',
+        url: 'https://opensource.org/licenses/MIT'
+      }
+    },
+    servers: [
+      {
+        url: process.env.NODE_ENV === 'production' 
+          ? 'https://dental-clinic-backend-0vjn.onrender.com'
+          : 'http://localhost:3000',
+        description: process.env.NODE_ENV === 'production' ? 'Production Server' : 'Development Server'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Enter JWT token from login/register'
+        }
+      },
+      schemas: {
+        User: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'usr1' },
+            name: { type: 'string', example: 'John Doe' },
+            phone: { type: 'string', example: '+251911123456' },
+            email: { type: 'string', example: 'john@example.com' },
+            role: { type: 'string', enum: ['patient', 'admin'], example: 'patient' }
+          }
+        },
+        Service: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'srv1' },
+            category: { type: 'string', enum: ['preventive', 'cosmetic', 'restorative'], example: 'preventive' },
+            title: { type: 'string', example: 'Preventative Cleaning & Exam' },
+            description: { type: 'string', example: 'Comprehensive dental hygiene appointment' },
+            price: { type: 'string', example: '1500 ETB' },
+            duration: { type: 'string', example: '45 mins' },
+            promotionActive: { type: 'boolean', example: false },
+            promotionDetails: { type: 'string', example: '' },
+            discountPercent: { type: 'string', example: '' },
+            discountAmount: { type: 'string', example: '' }
+          }
+        },
+        Doctor: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'doc1' },
+            name: { type: 'string', example: 'Dr. Evelyn Smith' },
+            title: { type: 'string', example: 'Family Dentist' },
+            bio: { type: 'string', example: 'Specializes in...' },
+            imageUrl: { type: 'string', example: 'https://...' },
+            isFeatured: { type: 'boolean', example: true }
+          }
+        },
+        Appointment: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'app1' },
+            patientId: { type: 'string', example: 'usr1' },
+            patientName: { type: 'string', example: 'John Doe' },
+            date: { type: 'string', format: 'date', example: '2026-08-15' },
+            time: { type: 'string', example: '10:00 AM' },
+            dentist: { type: 'string', example: 'Dr. Evelyn Smith' },
+            status: { type: 'string', enum: ['Pending', 'Confirmed', 'Arrived', 'Completed', 'No Show', 'Canceled'], example: 'Pending' },
+            service: { type: 'string', example: 'Preventative Cleaning & Exam' },
+            autoCanceled: { type: 'boolean', example: false }
+          }
+        },
+        AuthResponse: {
+          type: 'object',
+          properties: {
+            token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIs...' },
+            user: { $ref: '#/components/schemas/User' }
+          }
+        },
+        ErrorResponse: {
+          type: 'object',
+          properties: {
+            error: { type: 'string', example: 'Invalid credentials' }
+          }
+        },
+        SlotResponse: {
+          type: 'object',
+          properties: {
+            slots: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['09:00 AM', '10:00 AM', '11:00 AM']
+            }
+          }
+        },
+        AvailabilityResponse: {
+          type: 'object',
+          properties: {
+            date: { type: 'string', format: 'date', example: '2026-08-15' },
+            doctorIds: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['doc1', 'doc2']
+            }
+          }
+        },
+        BlockedDate: {
+          type: 'object',
+          properties: {
+            date: { type: 'string', format: 'date', example: '2026-09-01' },
+            reason: { type: 'string', example: 'Annual Holiday' }
+          }
+        },
+        AdminConfig: {
+          type: 'object',
+          properties: {
+            services: { type: 'array', items: { $ref: '#/components/schemas/Service' } },
+            doctors: { type: 'array', items: { $ref: '#/components/schemas/Doctor' } },
+            appointments: { type: 'array', items: { $ref: '#/components/schemas/Appointment' } },
+            availability: {
+              type: 'object',
+              additionalProperties: {
+                type: 'array',
+                items: { type: 'string' }
+              }
+            },
+            blockedDates: { type: 'array', items: { $ref: '#/components/schemas/BlockedDate' } },
+            announcement: { type: 'string' },
+            bookingCutoffTime: { type: 'string', example: '14:00' }
+          }
+        }
+      }
+    },
+    security: [
+      {
+        bearerAuth: []
+      }
+    ],
+    tags: [
+      { name: 'Auth', description: 'Authentication endpoints' },
+      { name: 'Public', description: 'Public endpoints (no auth required)' },
+      { name: 'Patient', description: 'Patient endpoints (requires authentication)' },
+      { name: 'Admin', description: 'Admin endpoints (requires admin role)' }
+    ]
+  },
+  apis: ['./server.ts']
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+// Serve Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Dental Clinic API Documentation'
+}));
+
+// ==========================================
+// 3. AUTH MIDDLEWARE FUNCTIONS
+// ==========================================
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
 const authenticateToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -76,7 +260,6 @@ const authenticateToken = (req: any, res: any, next: any) => {
   }
 };
 
-// Admin Middleware: Verify Admin Role
 const requireAdmin = (req: any, res: any, next: any) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden. Administrator privileges required.' });
@@ -85,10 +268,53 @@ const requireAdmin = (req: any, res: any, next: any) => {
 };
 
 // ==========================================
-// 3. AUTHENTICATION ENDPOINTS
+// 4. AUTHENTICATION ENDPOINTS
 // ==========================================
 
-// POST /api/auth/register
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new patient
+ *     tags: [Auth]
+ *     description: Create a new patient account. Phone is required, email is optional.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - phone
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: John Doe
+ *               phone:
+ *                 type: string
+ *                 example: +251911123456
+ *               email:
+ *                 type: string
+ *                 example: john@example.com
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 app.post('/api/auth/register', authLimiter, (req, res) => {
   const { name, phone, email, password } = req.body;
 
@@ -141,7 +367,43 @@ app.post('/api/auth/register', authLimiter, (req, res) => {
   return res.status(201).json({ token, user: userPayload });
 });
 
-// POST /api/auth/login
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     description: Login with email or phone and password
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: admin@clinic.com
+ *               phone:
+ *                 type: string
+ *                 example: +251911000000
+ *               password:
+ *                 type: string
+ *                 example: admin123
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 app.post('/api/auth/login', authLimiter, (req, res) => {
   const { email, phone, password } = req.body;
 
@@ -173,16 +435,52 @@ app.post('/api/auth/login', authLimiter, (req, res) => {
   return res.json({ token, user: userPayload });
 });
 
-// GET /api/auth/me
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ */
 app.get('/api/auth/me', authenticateToken, (req: any, res) => {
   return res.json({ user: req.user });
 });
 
 // ==========================================
-// 4. PUBLIC ENDPOINTS
+// 5. PUBLIC ENDPOINTS
 // ==========================================
 
-// GET /api/services
+/**
+ * @swagger
+ * /api/services:
+ *   get:
+ *     summary: Get all services
+ *     tags: [Public]
+ *     description: Returns all dental services with pricing in ETB
+ *     responses:
+ *       200:
+ *         description: List of services
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Service'
+ */
 app.get('/api/services', (req, res) => {
   try {
     const db = dbInstance.getData();
@@ -205,7 +503,23 @@ app.get('/api/services', (req, res) => {
   }
 });
 
-// GET /api/doctors
+/**
+ * @swagger
+ * /api/doctors:
+ *   get:
+ *     summary: Get all doctors
+ *     tags: [Public]
+ *     description: Returns all doctors with their profiles and featured status
+ *     responses:
+ *       200:
+ *         description: List of doctors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Doctor'
+ */
 app.get('/api/doctors', (req, res) => {
   try {
     const db = dbInstance.getData();
@@ -224,7 +538,24 @@ app.get('/api/doctors', (req, res) => {
   }
 });
 
-// GET /api/public/announcement
+/**
+ * @swagger
+ * /api/public/announcement:
+ *   get:
+ *     summary: Get announcement banner
+ *     tags: [Public]
+ *     responses:
+ *       200:
+ *         description: Announcement text
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 text:
+ *                   type: string
+ *                   example: Summer Special 20% Off
+ */
 app.get('/api/public/announcement', (req, res) => {
   try {
     const db = dbInstance.getData();
@@ -234,7 +565,36 @@ app.get('/api/public/announcement', (req, res) => {
   }
 });
 
-// GET /api/slots
+/**
+ * @swagger
+ * /api/slots:
+ *   get:
+ *     summary: Get available time slots
+ *     tags: [Public]
+ *     parameters:
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date to check availability (YYYY-MM-DD)
+ *       - in: query
+ *         name: serviceTitle
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Service title (URL encoded)
+ *     responses:
+ *       200:
+ *         description: Available slots
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SlotResponse'
+ *       400:
+ *         description: Missing parameters
+ */
 app.get('/api/slots', (req, res) => {
   try {
     const date = req.query.date as string;
@@ -288,7 +648,35 @@ app.get('/api/slots', (req, res) => {
   }
 });
 
-// GET /api/availability
+/**
+ * @swagger
+ * /api/availability:
+ *   get:
+ *     summary: Get doctor availability for a date
+ *     tags: [Public]
+ *     parameters:
+ *       - in: query
+ *         name: date
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date to check availability (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: Availability data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/AvailabilityResponse'
+ *                 - type: object
+ *                   properties:
+ *                     availabilities:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/AvailabilityResponse'
+ */
 app.get('/api/availability', (req, res) => {
   try {
     const dateParam = req.query.date as string;
@@ -305,7 +693,26 @@ app.get('/api/availability', (req, res) => {
   }
 });
 
-// GET /api/config
+/**
+ * @swagger
+ * /api/config:
+ *   get:
+ *     summary: Get clinic configuration
+ *     tags: [Public]
+ *     responses:
+ *       200:
+ *         description: Clinic config
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 announcement:
+ *                   type: string
+ *                 bookingCutoffTime:
+ *                   type: string
+ *                   example: 14:00
+ */
 app.get('/api/config', (req, res) => {
   try {
     const db = dbInstance.getData();
@@ -316,10 +723,62 @@ app.get('/api/config', (req, res) => {
 });
 
 // ==========================================
-// 5. PATIENT ENDPOINTS
+// 6. PATIENT ENDPOINTS
 // ==========================================
 
-// POST /api/appointments
+/**
+ * @swagger
+ * /api/appointments:
+ *   post:
+ *     summary: Book an appointment
+ *     tags: [Patient]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Book a new appointment. Status defaults to 'Pending'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - serviceTitle
+ *               - date
+ *               - time
+ *               - dentistName
+ *             properties:
+ *               serviceTitle:
+ *                 type: string
+ *                 example: Preventative Cleaning & Exam
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: 2026-08-15
+ *               time:
+ *                 type: string
+ *                 example: 10:00 AM
+ *               dentistName:
+ *                 type: string
+ *                 example: Dr. Evelyn Smith
+ *     responses:
+ *       201:
+ *         description: Appointment created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 appointment:
+ *                   $ref: '#/components/schemas/Appointment'
+ *       400:
+ *         description: Booking error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ */
 app.post('/api/appointments', authenticateToken, (req: any, res) => {
   try {
     const { serviceTitle, serviceName, date, appointmentDate, time, appointmentTime, dentistName, doctorName } = req.body;
@@ -394,7 +853,26 @@ app.post('/api/appointments', authenticateToken, (req: any, res) => {
   }
 });
 
-// GET /api/appointments/me
+/**
+ * @swagger
+ * /api/appointments/me:
+ *   get:
+ *     summary: Get patient's appointments
+ *     tags: [Patient]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of patient's appointments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
+ *       401:
+ *         description: Unauthorized
+ */
 app.get('/api/appointments/me', authenticateToken, (req: any, res) => {
   try {
     const db = dbInstance.getData();
@@ -416,7 +894,44 @@ app.get('/api/appointments/me', authenticateToken, (req: any, res) => {
   }
 });
 
-// PUT /api/appointments/:id/cancel
+/**
+ * @swagger
+ * /api/appointments/{id}/cancel:
+ *   put:
+ *     summary: Cancel an appointment
+ *     tags: [Patient]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Appointment ID
+ *     responses:
+ *       200:
+ *         description: Appointment canceled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Appointment canceled successfully.
+ *       400:
+ *         description: Cannot cancel
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Appointment not found
+ */
 app.put('/api/appointments/:id/cancel', authenticateToken, (req: any, res) => {
   try {
     const { id } = req.params;
@@ -447,10 +962,27 @@ app.put('/api/appointments/:id/cancel', authenticateToken, (req: any, res) => {
 });
 
 // ==========================================
-// 6. ADMIN ENDPOINTS
+// 7. ADMIN ENDPOINTS
 // ==========================================
 
-// GET /api/admin/config
+/**
+ * @swagger
+ * /api/admin/config:
+ *   get:
+ *     summary: Full admin dashboard state
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Complete admin config
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AdminConfig'
+ *       403:
+ *         description: Admin role required
+ */
 app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const db = dbInstance.getData();
@@ -491,7 +1023,26 @@ app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) =>
   }
 });
 
-// GET /api/admin/appointments
+/**
+ * @swagger
+ * /api/admin/appointments:
+ *   get:
+ *     summary: Get all appointments (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All appointments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
+ *       403:
+ *         description: Admin role required
+ */
 app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const db = dbInstance.getData();
@@ -517,7 +1068,55 @@ app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, r
   }
 });
 
-// POST /api/admin/appointments
+/**
+ * @swagger
+ * /api/admin/appointments:
+ *   post:
+ *     summary: Create appointment for patient (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - patientId
+ *               - serviceTitle
+ *               - date
+ *               - time
+ *               - dentistName
+ *             properties:
+ *               patientId:
+ *                 type: string
+ *                 example: usr1
+ *               serviceTitle:
+ *                 type: string
+ *                 example: Root Canal Therapy
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: 2026-08-20
+ *               time:
+ *                 type: string
+ *                 example: 11:00 AM
+ *               dentistName:
+ *                 type: string
+ *                 example: Dr. Evelyn Smith
+ *               status:
+ *                 type: string
+ *                 enum: [Pending, Confirmed, Arrived, Completed, No Show, Canceled]
+ *                 example: Confirmed
+ *     responses:
+ *       201:
+ *         description: Appointment created
+ *       400:
+ *         description: Missing required fields
+ *       403:
+ *         description: Admin role required
+ */
 app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { patientId, patientName, serviceTitle, date, appointmentDate, time, appointmentTime, dentistName, status } = req.body;
@@ -574,7 +1173,44 @@ app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, 
   }
 });
 
-// PUT /api/admin/appointments/:id/status
+/**
+ * @swagger
+ * /api/admin/appointments/{id}/status:
+ *   put:
+ *     summary: Update appointment status (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Appointment ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [Pending, Confirmed, Arrived, Completed, No Show, Canceled]
+ *                 example: Confirmed
+ *     responses:
+ *       200:
+ *         description: Status updated
+ *       400:
+ *         description: Invalid status
+ *       403:
+ *         description: Admin role required
+ *       404:
+ *         description: Appointment not found
+ */
 app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
@@ -606,7 +1242,57 @@ app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (
   }
 });
 
-// POST /api/admin/services
+/**
+ * @swagger
+ * /api/admin/services:
+ *   post:
+ *     summary: Add new service (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - price
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: Deep Scaling
+ *               category:
+ *                 type: string
+ *                 enum: [preventive, cosmetic, restorative]
+ *                 example: preventive
+ *               description:
+ *                 type: string
+ *                 example: Professional deep cleaning
+ *               duration:
+ *                 type: string
+ *                 example: 60 mins
+ *               price:
+ *                 type: string
+ *                 example: 2500 ETB
+ *               promotionActive:
+ *                 type: boolean
+ *                 example: false
+ *               promotionDetails:
+ *                 type: string
+ *               discountPercent:
+ *                 type: string
+ *               discountAmount:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Service created
+ *       400:
+ *         description: Duplicate title
+ *       403:
+ *         description: Admin role required
+ */
 app.post('/api/admin/services', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { title, name, category, description, duration, price, promotionActive, promotionDetails, discountPercent, discountAmount } = req.body;
@@ -651,7 +1337,55 @@ app.post('/api/admin/services', authenticateToken, requireAdmin, (req: any, res)
   }
 });
 
-// PUT /api/admin/services/:title
+/**
+ * @swagger
+ * /api/admin/services/{title}:
+ *   put:
+ *     summary: Update service by title (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: title
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Service title (URL encoded)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *                 enum: [preventive, cosmetic, restorative]
+ *               description:
+ *                 type: string
+ *               duration:
+ *                 type: string
+ *               price:
+ *                 type: string
+ *               promotionActive:
+ *                 type: boolean
+ *               promotionDetails:
+ *                 type: string
+ *               discountPercent:
+ *                 type: string
+ *               discountAmount:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Service updated
+ *       404:
+ *         description: Service not found
+ *       403:
+ *         description: Admin role required
+ */
 app.put('/api/admin/services/:title', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const identifier = decodeURIComponent(req.params.title);
@@ -685,7 +1419,29 @@ app.put('/api/admin/services/:title', authenticateToken, requireAdmin, (req: any
   }
 });
 
-// DELETE /api/admin/services/:title
+/**
+ * @swagger
+ * /api/admin/services/{title}:
+ *   delete:
+ *     summary: Delete service by title (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: title
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Service title (URL encoded)
+ *     responses:
+ *       200:
+ *         description: Service deleted
+ *       404:
+ *         description: Service not found
+ *       403:
+ *         description: Admin role required
+ */
 app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const identifier = decodeURIComponent(req.params.title);
@@ -707,7 +1463,44 @@ app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req: 
   }
 });
 
-// POST /api/admin/doctors
+/**
+ * @swagger
+ * /api/admin/doctors:
+ *   post:
+ *     summary: Add new doctor (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Dr. Sarah Lee
+ *               title:
+ *                 type: string
+ *                 example: Orthodontist
+ *               bio:
+ *                 type: string
+ *               imageUrl:
+ *                 type: string
+ *               isFeatured:
+ *                 type: boolean
+ *                 example: false
+ *     responses:
+ *       201:
+ *         description: Doctor added
+ *       400:
+ *         description: Max 3 featured doctors
+ *       403:
+ *         description: Admin role required
+ */
 app.post('/api/admin/doctors', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { name, title, bio, imageUrl, isFeatured } = req.body;
@@ -749,7 +1542,48 @@ app.post('/api/admin/doctors', authenticateToken, requireAdmin, (req: any, res) 
   }
 });
 
-// PUT /api/admin/doctors/:id
+/**
+ * @swagger
+ * /api/admin/doctors/{id}:
+ *   put:
+ *     summary: Update doctor (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Doctor ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               title:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *               imageUrl:
+ *                 type: string
+ *               isFeatured:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Doctor updated
+ *       400:
+ *         description: Max 3 featured doctors
+ *       404:
+ *         description: Doctor not found
+ *       403:
+ *         description: Admin role required
+ */
 app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
@@ -786,7 +1620,43 @@ app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any, re
   }
 });
 
-// PUT /api/admin/doctors/:id/feature
+/**
+ * @swagger
+ * /api/admin/doctors/{id}/feature:
+ *   put:
+ *     summary: Toggle featured status (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Enforces maximum 3 featured doctors
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Doctor ID
+ *     responses:
+ *       200:
+ *         description: Featured status toggled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 doctor:
+ *                   $ref: '#/components/schemas/Doctor'
+ *       400:
+ *         description: Maximum 3 featured doctors limit
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Doctor not found
+ *       403:
+ *         description: Admin role required
+ */
 app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
@@ -818,7 +1688,29 @@ app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req:
   }
 });
 
-// DELETE /api/admin/doctors/:id
+/**
+ * @swagger
+ * /api/admin/doctors/{id}:
+ *   delete:
+ *     summary: Delete doctor (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Doctor ID
+ *     responses:
+ *       200:
+ *         description: Doctor deleted
+ *       404:
+ *         description: Doctor not found
+ *       403:
+ *         description: Admin role required
+ */
 app.delete('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
@@ -840,7 +1732,41 @@ app.delete('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any,
   }
 });
 
-// PUT /api/admin/availability
+/**
+ * @swagger
+ * /api/admin/availability:
+ *   put:
+ *     summary: Set doctor availability (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - date
+ *               - doctorIds
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: 2026-08-15
+ *               doctorIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["doc1", "doc2"]
+ *     responses:
+ *       200:
+ *         description: Availability updated
+ *       400:
+ *         description: Invalid request
+ *       403:
+ *         description: Admin role required
+ */
 app.put('/api/admin/availability', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date, doctorIds } = req.body;
@@ -877,7 +1803,28 @@ app.put('/api/admin/availability', authenticateToken, requireAdmin, (req: any, r
   }
 });
 
-// DELETE /api/admin/availability/:date
+/**
+ * @swagger
+ * /api/admin/availability/{date}:
+ *   delete:
+ *     summary: Clear doctor availability (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date to clear availability (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: Availability cleared
+ *       403:
+ *         description: Admin role required
+ */
 app.delete('/api/admin/availability/:date', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date } = req.params;
@@ -897,7 +1844,38 @@ app.delete('/api/admin/availability/:date', authenticateToken, requireAdmin, (re
   }
 });
 
-// POST /api/admin/blocked-dates
+/**
+ * @swagger
+ * /api/admin/blocked-dates:
+ *   post:
+ *     summary: Block a date (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - date
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: 2026-09-01
+ *               reason:
+ *                 type: string
+ *                 example: Annual Holiday
+ *     responses:
+ *       200:
+ *         description: Date blocked
+ *       400:
+ *         description: Invalid request
+ *       403:
+ *         description: Admin role required
+ */
 app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date, reason } = req.body;
@@ -930,7 +1908,28 @@ app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any,
   }
 });
 
-// DELETE /api/admin/blocked-dates/:date
+/**
+ * @swagger
+ * /api/admin/blocked-dates/{date}:
+ *   delete:
+ *     summary: Unblock a date (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date to unblock (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: Date unblocked
+ *       403:
+ *         description: Admin role required
+ */
 app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date } = req.params;
@@ -950,7 +1949,32 @@ app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (r
   }
 });
 
-// PUT /api/admin/announcement
+/**
+ * @swagger
+ * /api/admin/announcement:
+ *   put:
+ *     summary: Update announcement banner (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - text
+ *             properties:
+ *               text:
+ *                 type: string
+ *                 example: New Summer Special 20% Off!
+ *     responses:
+ *       200:
+ *         description: Announcement updated
+ *       403:
+ *         description: Admin role required
+ */
 app.put('/api/admin/announcement', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { text } = req.body;
@@ -967,7 +1991,32 @@ app.put('/api/admin/announcement', authenticateToken, requireAdmin, (req: any, r
   }
 });
 
-// PUT /api/admin/cutoff
+/**
+ * @swagger
+ * /api/admin/cutoff:
+ *   put:
+ *     summary: Update booking cutoff time (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - time
+ *             properties:
+ *               time:
+ *                 type: string
+ *                 example: 14:00
+ *     responses:
+ *       200:
+ *         description: Cutoff time updated
+ *       403:
+ *         description: Admin role required
+ */
 app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { time } = req.body;
@@ -985,15 +2034,19 @@ app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req: any, res) =>
 });
 
 // ==========================================
-// 7. ROOT ROUTE & 404 HANDLER
+// 8. ROOT ROUTE & 404 HANDLER
 // ==========================================
 
 // GET / - API Status
 app.get('/', (req, res) => {
+  const host = req.get('host') || 'localhost:3000';
+  const protocol = req.protocol || 'http';
+  
   res.json({
     status: 'online',
     message: 'Dental Clinic API is running',
     version: '1.0.0',
+    documentation: `${protocol}://${host}/api-docs`,
     endpoints: {
       public: [
         'GET /api/services',
@@ -1058,11 +2111,12 @@ app.use((req, res) => {
 });
 
 // ==========================================
-// 8. START SERVER
+// 9. START SERVER
 // ==========================================
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Dental Clinic API Server running on http://localhost:${PORT}`);
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`✅ Health check: http://localhost:${PORT}/health`);
+  console.log(`✅ Swagger UI: http://localhost:${PORT}/api-docs`);
 });
