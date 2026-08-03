@@ -647,31 +647,79 @@ app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, r
 
 app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, res) => {
   try {
-    const { patientId, patientName, serviceTitle, date, appointmentDate, time, appointmentTime, dentistName, status } = req.body;
+    const { patientId, patientName, patientPhone, patientEmail, serviceTitle, date, appointmentDate, time, appointmentTime, dentistId, dentistName, status } = req.body;
 
     const finalDate = appointmentDate || date;
     const finalTime = appointmentTime || time;
 
-    if (!patientId || !serviceTitle || !finalDate || !finalTime || !dentistName) {
-      return res.status(400).json({ error: 'patientId, serviceTitle, date, time, and dentistName are required.' });
+    const db = dbInstance.getData();
+
+    let finalPatientId = patientId;
+    let finalPatientName = patientName;
+
+    if (!finalPatientId) {
+      if (!patientPhone) {
+        return res.status(400).json({ error: 'Patient phone is required when creating a new patient.' });
+      }
+      
+      const existingPatient = db.users.find((u: any) => u.phone === patientPhone);
+      
+      if (existingPatient) {
+        finalPatientId = existingPatient.id;
+        finalPatientName = existingPatient.name;
+      } else if (patientName && patientPhone) {
+        const newPatientId = generateId();
+        const passwordHash = bcrypt.hashSync('patient123', 10);
+        const newPatient = {
+          _id: newPatientId,
+          id: newPatientId,
+          name: patientName,
+          phone: patientPhone,
+          email: patientEmail || '',
+          passwordHash,
+          role: 'patient',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        db.users.push(newPatient);
+        dbInstance.save();
+        finalPatientId = newPatientId;
+        finalPatientName = patientName;
+      } else {
+        return res.status(400).json({ error: 'Patient Name and Phone are required to create a new patient.' });
+      }
+    }
+
+    if (!serviceTitle || !finalDate || !finalTime) {
+      return res.status(400).json({ error: 'serviceTitle, date, and time are required.' });
+    }
+
+    let finalDentistName = dentistName;
+    if (dentistId) {
+      const dentist = db.doctors.find((d: any) => d.id === dentistId);
+      if (dentist) {
+        finalDentistName = dentist.name;
+      }
+    }
+
+    if (!finalDentistName) {
+      const defaultDentist = db.doctors[0];
+      finalDentistName = defaultDentist ? defaultDentist.name : 'Assigned Dentist';
     }
 
     const validStatuses: AppointmentStatus[] = ['Pending', 'Confirmed', 'Completed', 'Arrived', 'No Show', 'Canceled'];
     const finalStatus: AppointmentStatus = status && validStatuses.includes(status) ? status : 'Confirmed';
 
-    const db = dbInstance.getData();
-    const patientUser = db.users.find((u: any) => u.id === patientId || u._id === patientId);
-
     const newAppId = generateId();
     const newAppointment = {
       _id: newAppId,
       id: newAppId,
-      patientId,
-      patientName: patientName || (patientUser ? patientUser.name : 'Patient'),
+      patientId: finalPatientId,
+      patientName: finalPatientName || patientName || 'Patient',
       serviceTitle,
       appointmentDate: finalDate,
       appointmentTime: finalTime,
-      dentistName,
+      dentistName: finalDentistName,
       status: finalStatus,
       autoCanceled: false,
       createdAt: new Date().toISOString(),

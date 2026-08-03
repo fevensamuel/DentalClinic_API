@@ -49,7 +49,7 @@
       "price": "7500",
       "promotionActive": false,
       "promotionDetails": "20% Off Summer Special for New Patients",
-      "discountPercent": 20,
+      "discountPercent": "20",
       "discountAmount": "700 ETB",
       "createdAt": "2026-08-03T16:03:41.571Z",
       "updatedAt": "2026-08-03T18:57:48.866Z"
@@ -64,7 +64,7 @@
       "price": "2000",
       "promotionActive": false,
       "promotionDetails": "Free 3D Scan Included",
-      "discountPercent": 40,
+      "discountPercent": "40",
       "discountAmount": "300 ETB",
       "createdAt": "2026-08-03T16:03:41.571Z",
       "updatedAt": "2026-08-03T18:45:48.601Z"
@@ -79,7 +79,7 @@
       "price": "6000 ETB",
       "promotionActive": true,
       "promotionDetails": "",
-      "discountPercent": 50,
+      "discountPercent": "50",
       "discountAmount": "",
       "createdAt": "2026-08-03T16:03:41.571Z",
       "updatedAt": "2026-08-03T19:00:58.986Z"
@@ -94,7 +94,7 @@
       "price": "3500",
       "promotionActive": true,
       "promotionDetails": "",
-      "discountPercent": 50,
+      "discountPercent": "50",
       "discountAmount": "0 ETB",
       "createdAt": "2026-08-03T19:02:14.744Z",
       "updatedAt": "2026-08-03T19:05:02.233Z"
