@@ -1,0 +1,467 @@
+{
+  "users": [
+    {
+      "_id": "usr1",
+      "id": "usr1",
+      "name": "Admin User",
+      "email": "admin@clinic.com",
+      "phone": "+251911000000",
+      "passwordHash": "$2b$10$rCzU5yOh.OFqqqMYLvRWyuDh589GXEAigIm4hdDclz8ijxlZT6Oqm",
+      "role": "admin",
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "usr2",
+      "id": "usr2",
+      "name": "Jane Doe",
+      "email": "jane.doe@example.com",
+      "phone": "+251922000000",
+      "passwordHash": "$2b$10$/7gsUue7dvyKX9kEM8078u1Pn7Hantjvf0pqn6FYveufbFgQqFZym",
+      "role": "patient",
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    }
+  ],
+  "services": [
+    {
+      "_id": "srv1",
+      "id": "srv1",
+      "category": "preventive",
+      "title": "Preventative Cleaning & Exam",
+      "description": "Comprehensive dental hygiene appointment including ultrasonic scaling, polishing, flossing, and oral cancer screening.",
+      "duration": "45 mins",
+      "price": "1500 ETB",
+      "promotionActive": false,
+      "promotionDetails": "",
+      "discountPercent": "",
+      "discountAmount": "",
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "srv2",
+      "id": "srv2",
+      "category": "cosmetic",
+      "title": "Professional Teeth Whitening",
+      "description": "Advanced laser-activated in-office teeth whitening that brightens your smile up to 8 shades in a single safe 1-hour session.",
+      "duration": "60 mins",
+      "price": "3500 ETB",
+      "promotionActive": true,
+      "promotionDetails": "20% Off Summer Special for New Patients",
+      "discountPercent": "20%",
+      "discountAmount": "700 ETB",
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "srv3",
+      "id": "srv3",
+      "category": "cosmetic",
+      "title": "Clear Aligners Consultation",
+      "description": "Comprehensive 3D digital scan and alignment plan for Invisalign and invisible aligners.",
+      "duration": "30 mins",
+      "price": "2000 ETB",
+      "promotionActive": true,
+      "promotionDetails": "Free 3D Scan Included",
+      "discountPercent": "15%",
+      "discountAmount": "300 ETB",
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "srv4",
+      "id": "srv4",
+      "category": "restorative",
+      "title": "Root Canal Therapy",
+      "description": "Micro-dentistry therapy designed to eliminate infection, relieve pain, and preserve your natural tooth.",
+      "duration": "90 mins",
+      "price": "6000 ETB",
+      "promotionActive": false,
+      "promotionDetails": "",
+      "discountPercent": "",
+      "discountAmount": "",
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    }
+  ],
+  "doctors": [
+    {
+      "_id": "doc1",
+      "id": "doc1",
+      "name": "Dr. Selamawit Moges",
+      "title": "DDS Cosmetic & Restorative Specialist",
+      "bio": "Over 12 years of clinical excellence specializing in digital smile design, veneers, and full mouth rehabilitations.",
+      "imageUrl": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400",
+      "isFeatured": true,
+      "createdAt": "2026-08-03T16:03:41.569Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "doc2",
+      "id": "doc2",
+      "name": "Dr. Marcus Vance",
+      "title": "Orthodontics & Clear Aligner Specialist",
+      "bio": "Certified Invisalign provider focusing on non-invasive bite corrections and aesthetic aligners for teens and adults.",
+      "imageUrl": "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400",
+      "isFeatured": true,
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "doc3",
+      "id": "doc3",
+      "name": "Dr. Elena Rostova",
+      "title": "Pediatric & Family Hygiene Expert",
+      "bio": "Compassionate pediatric dental care establishing lifelong healthy habits with fun, stress-free clinical visits.",
+      "imageUrl": "https://images.unsplash.com/photo-1594824813573-246434de83fb?auto=format&fit=crop&q=80&w=400",
+      "isFeatured": true,
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    }
+  ],
+  "availabilities": [
+    {
+      "_id": "av_2026-08-03",
+      "id": "av_2026-08-03",
+      "date": "2026-08-03",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-04",
+      "id": "av_2026-08-04",
+      "date": "2026-08-04",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-05",
+      "id": "av_2026-08-05",
+      "date": "2026-08-05",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-06",
+      "id": "av_2026-08-06",
+      "date": "2026-08-06",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-07",
+      "id": "av_2026-08-07",
+      "date": "2026-08-07",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-08",
+      "id": "av_2026-08-08",
+      "date": "2026-08-08",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-10",
+      "id": "av_2026-08-10",
+      "date": "2026-08-10",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-11",
+      "id": "av_2026-08-11",
+      "date": "2026-08-11",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-12",
+      "id": "av_2026-08-12",
+      "date": "2026-08-12",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-13",
+      "id": "av_2026-08-13",
+      "date": "2026-08-13",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-14",
+      "id": "av_2026-08-14",
+      "date": "2026-08-14",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-15",
+      "id": "av_2026-08-15",
+      "date": "2026-08-15",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-17",
+      "id": "av_2026-08-17",
+      "date": "2026-08-17",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-18",
+      "id": "av_2026-08-18",
+      "date": "2026-08-18",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-19",
+      "id": "av_2026-08-19",
+      "date": "2026-08-19",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-20",
+      "id": "av_2026-08-20",
+      "date": "2026-08-20",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.571Z",
+      "updatedAt": "2026-08-03T16:03:41.571Z"
+    },
+    {
+      "_id": "av_2026-08-21",
+      "id": "av_2026-08-21",
+      "date": "2026-08-21",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "av_2026-08-22",
+      "id": "av_2026-08-22",
+      "date": "2026-08-22",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "av_2026-08-24",
+      "id": "av_2026-08-24",
+      "date": "2026-08-24",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "av_2026-08-25",
+      "id": "av_2026-08-25",
+      "date": "2026-08-25",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "av_2026-08-26",
+      "id": "av_2026-08-26",
+      "date": "2026-08-26",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "av_2026-08-27",
+      "id": "av_2026-08-27",
+      "date": "2026-08-27",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "av_2026-08-28",
+      "id": "av_2026-08-28",
+      "date": "2026-08-28",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "av_2026-08-29",
+      "id": "av_2026-08-29",
+      "date": "2026-08-29",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "av_2026-08-31",
+      "id": "av_2026-08-31",
+      "date": "2026-08-31",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "av_2026-09-01",
+      "id": "av_2026-09-01",
+      "date": "2026-09-01",
+      "doctorIds": [
+        "doc1",
+        "doc2",
+        "doc3"
+      ],
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    }
+  ],
+  "blockedDates": [
+    {
+      "_id": "blk1",
+      "id": "blk1",
+      "date": "2026-12-25",
+      "reason": "Christmas Holiday Closure"
+    }
+  ],
+  "appointments": [
+    {
+      "_id": "app1",
+      "id": "app1",
+      "patientId": "usr2",
+      "patientName": "Jane Doe",
+      "serviceTitle": "Teeth Cleaning & Oral Checkup",
+      "serviceId": "srv1",
+      "appointmentDate": "2026-08-05",
+      "appointmentTime": "10:00 AM",
+      "dentistName": "Dr. Selamawit Moges",
+      "doctorId": "doc1",
+      "status": "Confirmed",
+      "autoCanceled": false,
+      "createdAt": "2026-08-03T16:03:41.572Z",
+      "updatedAt": "2026-08-03T16:03:41.572Z"
+    }
+  ],
+  "websiteConfig": {
+    "announcement": "✨ Summer Promotion: 20% Off In-Office Teeth Whitening sessions this month!",
+    "bookingCutoffTime": "14:00"
+  }
+}
