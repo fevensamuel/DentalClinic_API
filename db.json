@@ -21,6 +21,28 @@
       "role": "patient",
       "createdAt": "2026-08-03T16:03:41.572Z",
       "updatedAt": "2026-08-03T16:03:41.572Z"
+    },
+    {
+      "_id": "p2hgp703u",
+      "id": "p2hgp703u",
+      "name": "Abebe",
+      "phone": "+251911223344",
+      "email": "abebe@gmail.com",
+      "passwordHash": "$2b$10$rUpczpYucNBmD8PRH5vIlOGf5U1YW7PnzLwVxL6dFu6iqYMhSfv4O",
+      "role": "patient",
+      "createdAt": "2026-08-03T19:58:27.810Z",
+      "updatedAt": "2026-08-03T19:58:27.810Z"
+    },
+    {
+      "_id": "ztweoa36z",
+      "id": "ztweoa36z",
+      "name": "kebde",
+      "phone": "+251988776655",
+      "email": "kebde@gmail.com",
+      "passwordHash": "$2b$10$qZBafnq/evQ9OHfQlvFvreHD1hj5MV9sb0OnYPvd6EG/fCzWTNaPS",
+      "role": "patient",
+      "createdAt": "2026-08-03T20:03:47.159Z",
+      "updatedAt": "2026-08-03T20:03:47.159Z"
     }
   ],
   "services": [
@@ -473,6 +495,48 @@
       "autoCanceled": false,
       "createdAt": "2026-08-03T16:03:41.572Z",
       "updatedAt": "2026-08-03T19:05:14.091Z"
+    },
+    {
+      "_id": "lomcy2fo5",
+      "id": "lomcy2fo5",
+      "patientId": "p2hgp703u",
+      "patientName": "Abebe",
+      "serviceTitle": "Professional Teeth Whitening",
+      "appointmentDate": "2026-08-05",
+      "appointmentTime": "12:00 PM",
+      "dentistName": "Dr. Marcus Vance",
+      "status": "Confirmed",
+      "autoCanceled": false,
+      "createdAt": "2026-08-03T19:58:27.813Z",
+      "updatedAt": "2026-08-03T19:58:27.813Z"
+    },
+    {
+      "_id": "kdmspszgp",
+      "id": "kdmspszgp",
+      "patientId": "p2hgp703u",
+      "patientName": "Abebe",
+      "serviceTitle": "Professional Teeth Whitening",
+      "appointmentDate": "2026-08-04",
+      "appointmentTime": "03:00 PM",
+      "dentistName": "Dr. Elena Rostova",
+      "status": "Confirmed",
+      "autoCanceled": false,
+      "createdAt": "2026-08-03T20:02:50.562Z",
+      "updatedAt": "2026-08-03T20:02:50.563Z"
+    },
+    {
+      "_id": "2bvdp2s7m",
+      "id": "2bvdp2s7m",
+      "patientId": "ztweoa36z",
+      "patientName": "kebde",
+      "serviceTitle": "Laugh",
+      "appointmentDate": "2026-08-06",
+      "appointmentTime": "09:00 AM",
+      "dentistName": "Dr. Marcus Vance",
+      "status": "Confirmed",
+      "autoCanceled": false,
+      "createdAt": "2026-08-03T20:03:47.161Z",
+      "updatedAt": "2026-08-03T20:03:47.161Z"
     }
   ],
   "websiteConfig": {
