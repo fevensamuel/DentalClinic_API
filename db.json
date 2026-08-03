@@ -45,14 +45,14 @@
       "category": "cosmetic",
       "title": "Professional Teeth Whitening",
       "description": "Advanced laser-activated in-office teeth whitening that brightens your smile up to 8 shades in a single safe 1-hour session.",
-      "duration": "60 mins",
-      "price": "3500 ETB",
-      "promotionActive": true,
+      "duration": "45",
+      "price": "7500",
+      "promotionActive": false,
       "promotionDetails": "20% Off Summer Special for New Patients",
-      "discountPercent": "20%",
+      "discountPercent": 20,
       "discountAmount": "700 ETB",
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-03T18:57:48.866Z"
     },
     {
       "_id": "srv3",
@@ -60,14 +60,14 @@
       "category": "cosmetic",
       "title": "Clear Aligners Consultation",
       "description": "Comprehensive 3D digital scan and alignment plan for Invisalign and invisible aligners.",
-      "duration": "30 mins",
-      "price": "2000 ETB",
-      "promotionActive": true,
+      "duration": "30",
+      "price": "2000",
+      "promotionActive": false,
       "promotionDetails": "Free 3D Scan Included",
-      "discountPercent": "15%",
+      "discountPercent": 40,
       "discountAmount": "300 ETB",
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-03T18:45:48.601Z"
     },
     {
       "_id": "srv4",
@@ -77,12 +77,27 @@
       "description": "Micro-dentistry therapy designed to eliminate infection, relieve pain, and preserve your natural tooth.",
       "duration": "90 mins",
       "price": "6000 ETB",
-      "promotionActive": false,
+      "promotionActive": true,
       "promotionDetails": "",
-      "discountPercent": "",
+      "discountPercent": 50,
       "discountAmount": "",
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-03T19:00:58.986Z"
+    },
+    {
+      "_id": "bi7wzqh7o",
+      "id": "bi7wzqh7o",
+      "category": "Cosmetic",
+      "title": "Laugh",
+      "description": "new service",
+      "duration": "45 mins",
+      "price": "3500",
+      "promotionActive": true,
+      "promotionDetails": "",
+      "discountPercent": 50,
+      "discountAmount": "0 ETB",
+      "createdAt": "2026-08-03T19:02:14.744Z",
+      "updatedAt": "2026-08-03T19:05:02.233Z"
     }
   ],
   "doctors": [
@@ -115,9 +130,9 @@
       "title": "Pediatric & Family Hygiene Expert",
       "bio": "Compassionate pediatric dental care establishing lifelong healthy habits with fun, stress-free clinical visits.",
       "imageUrl": "https://images.unsplash.com/photo-1594824813573-246434de83fb?auto=format&fit=crop&q=80&w=400",
-      "isFeatured": true,
+      "isFeatured": false,
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-03T19:08:53.697Z"
     }
   ],
   "availabilities": [
@@ -454,10 +469,10 @@
       "appointmentTime": "10:00 AM",
       "dentistName": "Dr. Selamawit Moges",
       "doctorId": "doc1",
-      "status": "Confirmed",
+      "status": "Completed",
       "autoCanceled": false,
       "createdAt": "2026-08-03T16:03:41.572Z",
-      "updatedAt": "2026-08-03T16:03:41.572Z"
+      "updatedAt": "2026-08-03T19:05:14.091Z"
     }
   ],
   "websiteConfig": {
