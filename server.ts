@@ -7,11 +7,17 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import multer from 'multer'; // NEW
+import fs from 'fs'; // NEW
 import { dbInstance, generateId, AppointmentStatus } from './src/database';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dental_clinic_super_secret_key_2026';
+
+// ==========================================
+// 1. MIDDLEWARE CONFIGURATION
+// ==========================================
 
 const allowedOrigins = [
   'http://localhost:3000',
@@ -36,6 +42,43 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// ==========================================
+// FILE UPLOAD CONFIGURATION (NEW)
+// ==========================================
+
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, '../uploads/doctors');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `doctor-${uniqueSuffix}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed') as any, false);
+    }
+  }
+});
+
+// Serve static files from uploads folder
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 app.use(express.json());
 
 app.use(helmet({
@@ -49,6 +92,10 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// ==========================================
+// SWAGGER CONFIGURATION
+// ==========================================
 
 const swaggerOptions = {
   definition: {
@@ -220,6 +267,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'Dental Clinic API Documentation'
 }));
 
+// ==========================================
+// AUTHENTICATION MIDDLEWARE
+// ==========================================
+
 const authenticateToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -243,6 +294,10 @@ const requireAdmin = (req: any, res: any, next: any) => {
   }
   next();
 };
+
+// ==========================================
+// AUTH ENDPOINTS
+// ==========================================
 
 app.post('/api/auth/register', authLimiter, (req, res) => {
   const { name, phone, email, password } = req.body;
@@ -330,6 +385,10 @@ app.post('/api/auth/login', authLimiter, (req, res) => {
 app.get('/api/auth/me', authenticateToken, (req: any, res) => {
   return res.json({ user: req.user });
 });
+
+// ==========================================
+// PUBLIC ENDPOINTS
+// ==========================================
 
 app.get('/api/services', (req, res) => {
   try {
@@ -458,6 +517,10 @@ app.get('/api/config', (req, res) => {
   }
 });
 
+// ==========================================
+// PATIENT APPOINTMENT ENDPOINTS
+// ==========================================
+
 app.post('/api/appointments', authenticateToken, (req: any, res) => {
   try {
     const { serviceTitle, serviceName, date, appointmentDate, time, appointmentTime, dentistName, doctorName } = req.body;
@@ -583,6 +646,10 @@ app.put('/api/appointments/:id/cancel', authenticateToken, (req: any, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// ==========================================
+// ADMIN ENDPOINTS
+// ==========================================
 
 app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) => {
   try {
@@ -790,6 +857,10 @@ app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (
   }
 });
 
+// ==========================================
+// ADMIN SERVICES ENDPOINTS
+// ==========================================
+
 app.post('/api/admin/services', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { title, name, category, description, duration, price, promotionActive, promotionDetails, discountPercent, discountAmount } = req.body;
@@ -888,88 +959,169 @@ app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req: 
   }
 });
 
-app.post('/api/admin/doctors', authenticateToken, requireAdmin, (req: any, res) => {
-  try {
-    const { name, title, bio, imageUrl, isFeatured } = req.body;
+// ==========================================
+// ADMIN DOCTORS ENDPOINTS (UPDATED WITH FILE UPLOAD)
+// ==========================================
 
-    if (!name) {
-      return res.status(400).json({ error: 'Doctor name is required.' });
-    }
+// Helper function to get base URL for images
+const getImageUrl = (req: Request, filename: string) => {
+  if (!filename) return '';
+  const protocol = req.protocol;
+  const host = req.get('host');
+  return `${protocol}://${host}/uploads/doctors/${filename}`;
+};
 
-    const db = dbInstance.getData();
-
-    if (isFeatured) {
-      const featuredCount = (db.doctors || []).filter((d: any) => d.isFeatured).length;
-      if (featuredCount >= 3) {
-        return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
+// POST /api/admin/doctors - with file upload
+app.post(
+  '/api/admin/doctors',
+  authenticateToken,
+  requireAdmin,
+  upload.single('image'), // 'image' is the field name in the form
+  (req: any, res) => {
+    try {
+      const { name, title, bio, imageUrl, isFeatured } = req.body;
+      // If a file was uploaded, use its filename to generate URL
+      let finalImageUrl = imageUrl || '';
+      if (req.file) {
+        finalImageUrl = getImageUrl(req, req.file.filename);
       }
+
+      if (!name) {
+        return res.status(400).json({ error: 'Doctor name is required.' });
+      }
+
+      const db = dbInstance.getData();
+
+      if (isFeatured) {
+        const featuredCount = (db.doctors || []).filter((d: any) => d.isFeatured).length;
+        if (featuredCount >= 3) {
+          return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
+        }
+      }
+
+      const newId = generateId();
+      const newDoctor = {
+        _id: newId,
+        id: newId,
+        name,
+        title: title || 'Specialist Doctor',
+        bio: bio || '',
+        imageUrl: finalImageUrl,
+        isFeatured: Boolean(isFeatured),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      db.doctors = db.doctors || [];
+      db.doctors.push(newDoctor);
+      dbInstance.save();
+
+      res.status(201).json({ doctor: newDoctor });
+    } catch (error) {
+      console.error('Error creating doctor:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
+  }
+);
 
-    const newId = generateId();
-    const newDoctor = {
-      _id: newId,
-      id: newId,
-      name,
-      title: title || 'Specialist Doctor',
-      bio: bio || '',
-      imageUrl: imageUrl || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&q=80',
-      isFeatured: Boolean(isFeatured),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+// PUT /api/admin/doctors/:id - with file upload
+app.put(
+  '/api/admin/doctors/:id',
+  authenticateToken,
+  requireAdmin,
+  upload.single('image'),
+  (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { name, title, bio, imageUrl, isFeatured } = req.body;
 
-    db.doctors = db.doctors || [];
-    db.doctors.push(newDoctor);
-    dbInstance.save();
+      const db = dbInstance.getData();
+      const doctor = db.doctors.find((d: any) => d.id === id || d._id === id);
 
-    res.status(201).json({ doctor: newDoctor });
+      if (!doctor) {
+        return res.status(404).json({ error: 'Doctor not found.' });
+      }
+
+      // If a new file is uploaded, update imageUrl
+      let finalImageUrl = doctor.imageUrl; // keep existing by default
+      if (req.file) {
+        finalImageUrl = getImageUrl(req, req.file.filename);
+        // Optionally delete old file? We can skip for simplicity.
+      } else if (imageUrl !== undefined) {
+        // If imageUrl is explicitly provided in body, use it (for URL-based updates)
+        finalImageUrl = imageUrl;
+      }
+
+      if (isFeatured && !doctor.isFeatured) {
+        const otherFeaturedCount = (db.doctors || []).filter(
+          (d: any) => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id
+        ).length;
+        if (otherFeaturedCount >= 3) {
+          return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
+        }
+      }
+
+      if (name) doctor.name = name;
+      if (title) doctor.title = title;
+      if (bio !== undefined) doctor.bio = bio;
+      doctor.imageUrl = finalImageUrl;
+      if (isFeatured !== undefined) doctor.isFeatured = Boolean(isFeatured);
+
+      doctor.updatedAt = new Date().toISOString();
+      dbInstance.save();
+
+      res.json({ doctor });
+    } catch (error) {
+      console.error('Error updating doctor:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+// GET /api/admin/doctors - unchanged (just return list)
+app.get('/api/admin/doctors', authenticateToken, requireAdmin, (req: any, res) => {
+  try {
+    const db = dbInstance.getData();
+    const doctors = (db.doctors || []).map((d: any) => ({
+      id: d.id || d._id,
+      name: d.name,
+      title: d.title,
+      bio: d.bio || '',
+      imageUrl: d.imageUrl || '',
+      isFeatured: Boolean(d.isFeatured)
+    }));
+    res.json(doctors);
   } catch (error) {
-    console.error('Error creating doctor:', error);
+    console.error('Error fetching doctors:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any, res) => {
+// DELETE /api/admin/doctors/:id - unchanged
+app.delete('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
     const db = dbInstance.getData();
+    const index = db.doctors.findIndex((d: any) => d.id === id || d._id === id);
 
-    const doctor = db.doctors.find((d: any) => d.id === id || d._id === id);
-
-    if (!doctor) {
+    if (index === -1) {
       return res.status(404).json({ error: 'Doctor not found.' });
     }
 
-    const { name, title, bio, imageUrl, isFeatured } = req.body;
-
-    if (isFeatured && !doctor.isFeatured) {
-      const otherFeaturedCount = (db.doctors || []).filter((d: any) => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id).length;
-      if (otherFeaturedCount >= 3) {
-        return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
-      }
-    }
-
-    if (name) doctor.name = name;
-    if (title) doctor.title = title;
-    if (bio !== undefined) doctor.bio = bio;
-    if (imageUrl !== undefined) doctor.imageUrl = imageUrl;
-    if (isFeatured !== undefined) doctor.isFeatured = Boolean(isFeatured);
-
-    doctor.updatedAt = new Date().toISOString();
+    db.doctors.splice(index, 1);
     dbInstance.save();
-
-    res.json({ doctor });
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error updating doctor:', error);
+    console.error('Error deleting doctor:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// PUT /api/admin/doctors/:id/feature - unchanged
 app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
     const db = dbInstance.getData();
-
     const doctor = db.doctors.find((d: any) => d.id === id || d._id === id);
 
     if (!doctor) {
@@ -977,7 +1129,9 @@ app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req:
     }
 
     if (!doctor.isFeatured) {
-      const currentlyFeatured = (db.doctors || []).filter((d: any) => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id).length;
+      const currentlyFeatured = (db.doctors || []).filter(
+        (d: any) => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id
+      ).length;
       if (currentlyFeatured >= 3) {
         return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
       }
@@ -988,7 +1142,6 @@ app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req:
 
     doctor.updatedAt = new Date().toISOString();
     dbInstance.save();
-
     res.json({ doctor });
   } catch (error) {
     console.error('Error toggling doctor feature:', error);
@@ -996,26 +1149,9 @@ app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req:
   }
 });
 
-app.delete('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any, res) => {
-  try {
-    const { id } = req.params;
-    const db = dbInstance.getData();
-
-    const index = db.doctors.findIndex((d: any) => d.id === id || d._id === id);
-
-    if (index === -1) {
-      return res.status(404).json({ error: 'Doctor not found.' });
-    }
-
-    db.doctors.splice(index, 1);
-    dbInstance.save();
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting doctor:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// ==========================================
+// ADMIN AVAILABILITY & BLOCKED DATES
+// ==========================================
 
 app.put('/api/admin/availability', authenticateToken, requireAdmin, (req: any, res) => {
   try {
@@ -1123,6 +1259,10 @@ app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (r
   }
 });
 
+// ==========================================
+// ADMIN CONFIGURATION (ANNOUNCEMENT & CUTOFF)
+// ==========================================
+
 app.put('/api/admin/announcement', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { text } = req.body;
@@ -1154,6 +1294,10 @@ app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req: any, res) =>
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// ==========================================
+// ROOT & HEALTH
+// ==========================================
 
 app.get('/', (req, res) => {
   const host = req.get('host') || 'localhost:3000';
@@ -1212,6 +1356,10 @@ app.get('/health', (req, res) => {
   });
 });
 
+// ==========================================
+// 404 HANDLER
+// ==========================================
+
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',
@@ -1224,6 +1372,10 @@ app.use((req, res) => {
     }
   });
 });
+
+// ==========================================
+// START SERVER
+// ==========================================
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Dental Clinic API Server running on http://localhost:${PORT}`);

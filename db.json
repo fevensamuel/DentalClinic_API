@@ -26,8 +26,8 @@
       "_id": "p2hgp703u",
       "id": "p2hgp703u",
       "name": "Abebe",
-      "phone": "+251911223344",
       "email": "abebe@gmail.com",
+      "phone": "+251911223344",
       "passwordHash": "$2b$10$rUpczpYucNBmD8PRH5vIlOGf5U1YW7PnzLwVxL6dFu6iqYMhSfv4O",
       "role": "patient",
       "createdAt": "2026-08-03T19:58:27.810Z",
@@ -37,12 +37,23 @@
       "_id": "ztweoa36z",
       "id": "ztweoa36z",
       "name": "kebde",
-      "phone": "+251988776655",
       "email": "kebde@gmail.com",
+      "phone": "+251988776655",
       "passwordHash": "$2b$10$qZBafnq/evQ9OHfQlvFvreHD1hj5MV9sb0OnYPvd6EG/fCzWTNaPS",
       "role": "patient",
       "createdAt": "2026-08-03T20:03:47.159Z",
       "updatedAt": "2026-08-03T20:03:47.159Z"
+    },
+    {
+      "_id": "2krbixpjg",
+      "id": "2krbixpjg",
+      "name": "Hana",
+      "email": "hana@gmail.com",
+      "phone": "+251922553344",
+      "passwordHash": "$2b$10$Zg34tt5LndheGORycgMVT.HG50ou6R3IWtLBKfmzMmgbWdHsqMCIi",
+      "role": "patient",
+      "createdAt": "2026-08-03T20:43:15.443Z",
+      "updatedAt": "2026-08-03T20:43:15.444Z"
     }
   ],
   "services": [
@@ -120,6 +131,21 @@
       "discountAmount": "0 ETB",
       "createdAt": "2026-08-03T19:02:14.744Z",
       "updatedAt": "2026-08-03T19:05:02.233Z"
+    },
+    {
+      "_id": "n5ujpzuw2",
+      "id": "n5ujpzuw2",
+      "category": "Cosmetic",
+      "title": "Teeth Whitening",
+      "description": "Whitening teeth in just 1 hour",
+      "duration": "60",
+      "price": "5000 ETB",
+      "promotionActive": false,
+      "promotionDetails": "",
+      "discountPercent": 10,
+      "discountAmount": "0 ETB",
+      "createdAt": "2026-08-04T09:58:35.039Z",
+      "updatedAt": "2026-08-04T09:58:59.518Z"
     }
   ],
   "doctors": [
@@ -130,9 +156,9 @@
       "title": "DDS Cosmetic & Restorative Specialist",
       "bio": "Over 12 years of clinical excellence specializing in digital smile design, veneers, and full mouth rehabilitations.",
       "imageUrl": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400",
-      "isFeatured": true,
+      "isFeatured": false,
       "createdAt": "2026-08-03T16:03:41.569Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-04T10:08:08.631Z"
     },
     {
       "_id": "doc2",
@@ -141,9 +167,9 @@
       "title": "Orthodontics & Clear Aligner Specialist",
       "bio": "Certified Invisalign provider focusing on non-invasive bite corrections and aesthetic aligners for teens and adults.",
       "imageUrl": "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400",
-      "isFeatured": true,
+      "isFeatured": false,
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-04T10:11:59.693Z"
     },
     {
       "_id": "doc3",
@@ -152,9 +178,20 @@
       "title": "Pediatric & Family Hygiene Expert",
       "bio": "Compassionate pediatric dental care establishing lifelong healthy habits with fun, stress-free clinical visits.",
       "imageUrl": "https://images.unsplash.com/photo-1594824813573-246434de83fb?auto=format&fit=crop&q=80&w=400",
-      "isFeatured": false,
+      "isFeatured": true,
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T19:08:53.697Z"
+      "updatedAt": "2026-08-04T10:11:37.577Z"
+    },
+    {
+      "_id": "8jagyir6m",
+      "id": "8jagyir6m",
+      "name": "Dr Abebe Kebde",
+      "title": "Specialist Doctor",
+      "bio": "Very Good Doctor",
+      "imageUrl": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&q=80",
+      "isFeatured": true,
+      "createdAt": "2026-08-04T09:59:51.339Z",
+      "updatedAt": "2026-08-04T10:11:45.739Z"
     }
   ],
   "availabilities": [
@@ -491,10 +528,10 @@
       "appointmentTime": "10:00 AM",
       "dentistName": "Dr. Selamawit Moges",
       "doctorId": "doc1",
-      "status": "Completed",
+      "status": "Canceled",
       "autoCanceled": false,
       "createdAt": "2026-08-03T16:03:41.572Z",
-      "updatedAt": "2026-08-03T19:05:14.091Z"
+      "updatedAt": "2026-08-03T20:28:31.498Z"
     },
     {
       "_id": "lomcy2fo5",
@@ -536,7 +573,51 @@
       "status": "Confirmed",
       "autoCanceled": false,
       "createdAt": "2026-08-03T20:03:47.161Z",
-      "updatedAt": "2026-08-03T20:03:47.161Z"
+      "updatedAt": "2026-08-03T20:16:43.026Z"
+    },
+    {
+      "_id": "kfi9735c8",
+      "id": "kfi9735c8",
+      "patientId": "ztweoa36z",
+      "patientName": "kebde",
+      "serviceTitle": "Preventative Cleaning & Exam",
+      "appointmentDate": "2026-08-14",
+      "appointmentTime": "02:00 PM",
+      "dentistName": "Dr. Elena Rostova",
+      "status": "Confirmed",
+      "autoCanceled": false,
+      "createdAt": "2026-08-03T20:23:32.804Z",
+      "updatedAt": "2026-08-03T20:23:32.804Z"
+    },
+    {
+      "_id": "gmkic5vab",
+      "id": "gmkic5vab",
+      "patientId": "2krbixpjg",
+      "patientName": "Hana",
+      "serviceTitle": "Professional Teeth Whitening",
+      "appointmentDate": "2026-08-05",
+      "appointmentTime": "11:00",
+      "dentistName": "Dr. Marcus Vance",
+      "status": "Arrived",
+      "autoCanceled": false,
+      "createdAt": "2026-08-03T20:43:15.455Z",
+      "updatedAt": "2026-08-03T20:43:15.455Z"
+    },
+    {
+      "_id": "g3bqkrnx0",
+      "id": "g3bqkrnx0",
+      "patientId": "ztweoa36z",
+      "patientName": "kebde",
+      "patientEmail": "kebde@gmail.com",
+      "patientPhone": "+251988776655",
+      "serviceTitle": "Preventative Cleaning & Exam",
+      "appointmentDate": "2026-08-21",
+      "appointmentTime": "11:00",
+      "dentistName": "Dr. Elena Rostova",
+      "status": "Arrived",
+      "autoCanceled": false,
+      "createdAt": "2026-08-04T09:57:01.383Z",
+      "updatedAt": "2026-08-04T09:57:01.385Z"
     }
   ],
   "websiteConfig": {
