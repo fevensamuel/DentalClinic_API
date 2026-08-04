@@ -165,6 +165,8 @@ const swaggerOptions = {
             title: { type: 'string', example: 'Family Dentist' },
             bio: { type: 'string', example: 'Specializes in...' },
             imageUrl: { type: 'string', example: '' },
+            email: { type: 'string', example: 'doctor@clinic.com' },
+            phone: { type: 'string', example: '+251911000000' },
             isFeatured: { type: 'boolean', example: true }
           }
         },
@@ -308,13 +310,13 @@ app.post('/api/auth/register', authLimiter, (req, res) => {
 
   const db = dbInstance.getData();
 
-  const existingPhone = db.users.find(u => u.phone && u.phone.trim() === phone.trim());
+  const existingPhone = db.users.find((u: any) => u.phone && u.phone.trim() === phone.trim());
   if (existingPhone) {
     return res.status(400).json({ error: 'An account with this phone number already exists.' });
   }
 
   if (email && email.trim()) {
-    const existingEmail = db.users.find(u => u.email && u.email.toLowerCase() === email.trim().toLowerCase());
+    const existingEmail = db.users.find((u: any) => u.email && u.email.toLowerCase() === email.trim().toLowerCase());
     if (existingEmail) {
       return res.status(400).json({ error: 'An account with this email address already exists.' });
     }
@@ -359,7 +361,7 @@ app.post('/api/auth/login', authLimiter, (req, res) => {
   }
 
   const db = dbInstance.getData();
-  const user = db.users.find(u => {
+  const user = db.users.find((u: any) => {
     if (email && u.email && u.email.toLowerCase() === email.trim().toLowerCase()) return true;
     if (phone && u.phone && u.phone.trim() === phone.trim()) return true;
     return false;
@@ -421,6 +423,8 @@ app.get('/api/doctors', (req, res) => {
       title: d.title,
       bio: d.bio || '',
       imageUrl: getDoctorImageUrl(req, d),
+      email: d.email || '',
+      phone: d.phone || '',
       isFeatured: Boolean(d.isFeatured)
     }));
     res.json(doctors);
@@ -449,7 +453,6 @@ app.get('/api/slots', (req, res) => {
       return res.status(400).json({ error: 'date parameter is required' });
     }
 
-    // ✅ Check if date is blocked
     const blockedDates = db.blockedDates || [];
     const isBlocked = blockedDates.some((b: any) => b.date === date);
     
@@ -495,7 +498,6 @@ app.get('/api/slots', (req, res) => {
   }
 });
 
-// ✅ GET blocked dates for public
 app.get('/api/blocked-dates', (req, res) => {
   try {
     const db = dbInstance.getData();
@@ -516,7 +518,11 @@ app.get('/api/availability', (req, res) => {
     const db = dbInstance.getData();
 
     if (!dateParam) {
-      return res.json({ availabilities: db.availabilities || [] });
+      const allAvailabilities = (db.availabilities || []).map((a: any) => ({
+        date: a.date,
+        doctorIds: a.doctorIds || []
+      }));
+      return res.json(allAvailabilities);
     }
 
     const availability = db.availabilities?.find((a: any) => a.date === dateParam);
@@ -559,7 +565,6 @@ app.post('/api/appointments', authenticateToken, (req: any, res) => {
 
     const db = dbInstance.getData();
 
-    // ✅ Check if date is blocked
     const blockedDates = db.blockedDates || [];
     const isBlocked = blockedDates.some((b: any) => b.date === finalDate);
     
@@ -678,8 +683,13 @@ app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) =>
 
     const availabilityMap: Record<string, string[]> = {};
     (db.availabilities || []).forEach((a: any) => {
-      availabilityMap[a.date] = a.doctorIds;
+      availabilityMap[a.date] = a.doctorIds || [];
     });
+
+    const blockedDates = (db.blockedDates || []).map((b: any) => ({
+      date: b.date,
+      reason: b.reason || 'Clinic Closed'
+    }));
 
     const formattedAppointments = (db.appointments || []).map((a: any) => {
       const patientUser = (db.users || []).find((u: any) => u.id === a.patientId || u._id === a.patientId);
@@ -687,8 +697,8 @@ app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) =>
         id: a.id || a._id,
         patientId: a.patientId,
         patientName: a.patientName || (patientUser ? patientUser.name : 'Unknown Patient'),
-        patientEmail: patientUser ? patientUser.email || '' : '',
-        patientPhone: patientUser ? patientUser.phone : '+251922000100',
+        patientEmail: a.patientEmail || (patientUser ? patientUser.email || '' : ''),
+        patientPhone: a.patientPhone || (patientUser ? patientUser.phone : '+251922000100'),
         date: a.appointmentDate,
         time: a.appointmentTime,
         dentist: a.dentistName,
@@ -698,21 +708,32 @@ app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) =>
       };
     });
 
-    // ✅ Format blocked dates consistently
-    const blockedDates = (db.blockedDates || []).map((b: any) => ({
-      date: b.date,
-      reason: b.reason || 'Clinic Closed'
-    }));
-
-    res.json({
+    const response = {
       services: db.services || [],
-      doctors: db.doctors || [],
+      doctors: (db.doctors || []).map((d: any) => ({
+        id: d.id || d._id,
+        name: d.name,
+        title: d.title,
+        bio: d.bio || '',
+        imageUrl: d.imageUrl || '',
+        email: d.email || '',
+        phone: d.phone || '',
+        isFeatured: Boolean(d.isFeatured)
+      })),
       appointments: formattedAppointments,
       availability: availabilityMap,
       blockedDates: blockedDates,
       announcement: db.websiteConfig?.announcement || '',
       bookingCutoffTime: db.websiteConfig?.bookingCutoffTime || '14:00'
+    };
+
+    console.log('✅ Admin config fetched:', {
+      availabilityKeys: Object.keys(availabilityMap),
+      blockedDatesCount: blockedDates.length,
+      doctorsCount: response.doctors.length
     });
+
+    res.json(response);
   } catch (error) {
     console.error('Error fetching admin config:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -728,8 +749,8 @@ app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, r
         id: a.id || a._id,
         patientId: a.patientId,
         patientName: a.patientName || (patientUser ? patientUser.name : 'Unknown Patient'),
-        patientEmail: patientUser ? patientUser.email || '' : '',
-        patientPhone: patientUser ? patientUser.phone : '+251922000100',
+        patientEmail: a.patientEmail || (patientUser ? patientUser.email || '' : ''),
+        patientPhone: a.patientPhone || (patientUser ? patientUser.phone : '+251922000100'),
         date: a.appointmentDate,
         time: a.appointmentTime,
         dentist: a.dentistName,
@@ -807,7 +828,7 @@ app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, 
       finalDentistName = defaultDentist ? defaultDentist.name : 'Assigned Dentist';
     }
 
-    const validStatuses: AppointmentStatus[] = ['Pending', 'Confirmed', 'Completed', 'Arrived', 'No Show', 'Canceled'];
+    const validStatuses: AppointmentStatus[] = ['Pending', 'Confirmed', 'Arrived', 'Completed', 'No Show', 'Canceled'];
     const finalStatus: AppointmentStatus = status && validStatuses.includes(status) ? status : 'Confirmed';
 
     const newAppId = generateId('app');
@@ -858,7 +879,7 @@ app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses: AppointmentStatus[] = ['Pending', 'Confirmed', 'Completed', 'Arrived', 'No Show', 'Canceled'];
+    const validStatuses: AppointmentStatus[] = ['Pending', 'Confirmed', 'Arrived', 'Completed', 'No Show', 'Canceled'];
 
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({ 
@@ -1006,7 +1027,7 @@ const getDoctorImageUrl = (req: Request, doctor: { imageUrl?: string }) => {
 
 app.post('/api/admin/doctors', authenticateToken, requireAdmin, upload.single('image'), (req: any, res) => {
   try {
-    const { name, title, bio, imageUrl, isFeatured } = req.body;
+    const { name, title, bio, imageUrl, email, phone, isFeatured } = req.body;
     
     let finalImageUrl = '';
     if (req.file) {
@@ -1036,6 +1057,8 @@ app.post('/api/admin/doctors', authenticateToken, requireAdmin, upload.single('i
       title: title || 'Specialist Doctor',
       bio: bio || '',
       imageUrl: finalImageUrl,
+      email: email || '',
+      phone: phone || '',
       isFeatured: Boolean(isFeatured),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -1055,7 +1078,7 @@ app.post('/api/admin/doctors', authenticateToken, requireAdmin, upload.single('i
 app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, upload.single('image'), (req: any, res) => {
   try {
     const { id } = req.params;
-    const { name, title, bio, imageUrl, isFeatured } = req.body;
+    const { name, title, bio, imageUrl, email, phone, isFeatured } = req.body;
 
     const db = dbInstance.getData();
     const doctor = db.doctors.find((d: any) => d.id === id || d._id === id);
@@ -1083,6 +1106,8 @@ app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, upload.single
     if (name) doctor.name = name;
     if (title) doctor.title = title;
     if (bio !== undefined) doctor.bio = bio;
+    if (email !== undefined) doctor.email = email;
+    if (phone !== undefined) doctor.phone = phone;
     doctor.imageUrl = finalImageUrl;
     if (isFeatured !== undefined) doctor.isFeatured = Boolean(isFeatured);
 
@@ -1105,6 +1130,8 @@ app.get('/api/admin/doctors', authenticateToken, requireAdmin, (req: any, res) =
       title: d.title,
       bio: d.bio || '',
       imageUrl: getDoctorImageUrl(req, d),
+      email: d.email || '',
+      phone: d.phone || '',
       isFeatured: Boolean(d.isFeatured)
     }));
     res.json(doctors);
@@ -1168,6 +1195,20 @@ app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req:
 // 11. ADMIN AVAILABILITY & BLOCKED DATES
 // ==========================================
 
+app.get('/api/admin/availability', authenticateToken, requireAdmin, (req: any, res) => {
+  try {
+    const db = dbInstance.getData();
+    const availabilities = (db.availabilities || []).map((a: any) => ({
+      date: a.date,
+      doctorIds: a.doctorIds || []
+    }));
+    res.json(availabilities);
+  } catch (error) {
+    console.error('Error fetching availabilities:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.put('/api/admin/availability', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date, doctorIds } = req.body;
@@ -1177,31 +1218,28 @@ app.put('/api/admin/availability', authenticateToken, requireAdmin, (req: any, r
     }
 
     const db = dbInstance.getData();
-    let availability = db.availabilities?.find((a: any) => a.date === date);
+    if (!db.availabilities) db.availabilities = [];
 
-    if (availability) {
-      availability.doctorIds = doctorIds;
-      availability.updatedAt = new Date().toISOString();
+    let existing = db.availabilities.find((a: any) => a.date === date);
+    if (existing) {
+      existing.doctorIds = doctorIds;
+      existing.updatedAt = new Date().toISOString();
     } else {
       const newId = generateId('av');
-      availability = {
+      db.availabilities.push({
         _id: newId,
         id: newId,
         date,
         doctorIds,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      };
-      db.availabilities = db.availabilities || [];
-      db.availabilities.push(availability);
+      });
     }
 
     dbInstance.save();
-    res.json({ 
-      success: true, 
-      date, 
-      doctorIds 
-    });
+
+    const updated = db.availabilities.map((a: any) => ({ date: a.date, doctorIds: a.doctorIds || [] }));
+    res.json({ success: true, availabilities: updated });
   } catch (error) {
     console.error('Error setting availability:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -1212,108 +1250,24 @@ app.delete('/api/admin/availability/:date', authenticateToken, requireAdmin, (re
   try {
     const { date } = req.params;
     const db = dbInstance.getData();
+    if (!db.availabilities) db.availabilities = [];
 
-    const index = (db.availabilities || []).findIndex((a: any) => a.date === date);
-
-    if (index !== -1) {
-      db.availabilities.splice(index, 1);
-      dbInstance.save();
+    const index = db.availabilities.findIndex((a: any) => a.date === date);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Availability not found for this date.' });
     }
 
-    res.json({ success: true });
+    db.availabilities.splice(index, 1);
+    dbInstance.save();
+
+    const updated = db.availabilities.map((a: any) => ({ date: a.date, doctorIds: a.doctorIds || [] }));
+    res.json({ success: true, availabilities: updated });
   } catch (error) {
     console.error('Error deleting availability:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// ✅ FIXED: POST blocked dates - ensures proper storage and returns the added blocked date
-app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any, res) => {
-  try {
-    const { date, reason } = req.body;
-
-    if (!date) {
-      return res.status(400).json({ error: 'Date is required.' });
-    }
-
-    const db = dbInstance.getData();
-    
-    // Ensure blockedDates array exists
-    if (!db.blockedDates) {
-      db.blockedDates = [];
-    }
-    
-    // Check if already exists
-    const existingIndex = db.blockedDates.findIndex((b: any) => b.date === date);
-
-    if (existingIndex !== -1) {
-      // Update existing
-      db.blockedDates[existingIndex].reason = reason || db.blockedDates[existingIndex].reason || 'Clinic Closed';
-    } else {
-      // Add new
-      const newId = generateId('blk');
-      db.blockedDates.push({
-        _id: newId,
-        id: newId,
-        date: date,
-        reason: reason || 'Clinic Closed'
-      });
-    }
-
-    dbInstance.save();
-    
-    // Return the updated blocked dates list
-    const updatedBlockedDates = db.blockedDates.map((b: any) => ({
-      date: b.date,
-      reason: b.reason || 'Clinic Closed'
-    }));
-    
-    res.json({ 
-      success: true, 
-      blockedDates: updatedBlockedDates
-    });
-  } catch (error) {
-    console.error('Error adding blocked date:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ✅ FIXED: DELETE blocked dates
-app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (req: any, res) => {
-  try {
-    const { date } = req.params;
-    const db = dbInstance.getData();
-
-    if (!db.blockedDates) {
-      db.blockedDates = [];
-    }
-
-    const index = db.blockedDates.findIndex((b: any) => b.date === date);
-
-    if (index === -1) {
-      return res.status(404).json({ error: 'Blocked date not found.' });
-    }
-
-    db.blockedDates.splice(index, 1);
-    dbInstance.save();
-
-    // Return the updated blocked dates list
-    const updatedBlockedDates = db.blockedDates.map((b: any) => ({
-      date: b.date,
-      reason: b.reason || 'Clinic Closed'
-    }));
-
-    res.json({ 
-      success: true, 
-      blockedDates: updatedBlockedDates
-    });
-  } catch (error) {
-    console.error('Error removing blocked date:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ✅ GET blocked dates for admin
 app.get('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const db = dbInstance.getData();
@@ -1324,6 +1278,63 @@ app.get('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any, 
     res.json(blockedDates);
   } catch (error) {
     console.error('Error fetching blocked dates:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any, res) => {
+  try {
+    const { date, reason } = req.body;
+
+    if (!date) {
+      return res.status(400).json({ error: 'Date is required.' });
+    }
+
+    const db = dbInstance.getData();
+    if (!db.blockedDates) db.blockedDates = [];
+    
+    const existingIndex = db.blockedDates.findIndex((b: any) => b.date === date);
+
+    if (existingIndex !== -1) {
+      db.blockedDates[existingIndex].reason = reason || db.blockedDates[existingIndex].reason || 'Clinic Closed';
+    } else {
+      const newId = generateId('blk');
+      db.blockedDates.push({
+        _id: newId,
+        id: newId,
+        date,
+        reason: reason || 'Clinic Closed'
+      });
+    }
+
+    dbInstance.save();
+    
+    const updated = db.blockedDates.map((b: any) => ({ date: b.date, reason: b.reason || 'Clinic Closed' }));
+    res.json({ success: true, blockedDates: updated });
+  } catch (error) {
+    console.error('Error adding blocked date:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (req: any, res) => {
+  try {
+    const { date } = req.params;
+    const db = dbInstance.getData();
+    if (!db.blockedDates) db.blockedDates = [];
+
+    const index = db.blockedDates.findIndex((b: any) => b.date === date);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Blocked date not found.' });
+    }
+
+    db.blockedDates.splice(index, 1);
+    dbInstance.save();
+
+    const updated = db.blockedDates.map((b: any) => ({ date: b.date, reason: b.reason || 'Clinic Closed' }));
+    res.json({ success: true, blockedDates: updated });
+  } catch (error) {
+    console.error('Error removing blocked date:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1365,7 +1376,73 @@ app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req: any, res) =>
 });
 
 // ==========================================
-// 13. ROOT & HEALTH
+// 13. AUTO NO-SHOW CHECKER (Runs every minute)
+// ==========================================
+
+const checkNoShows = async () => {
+  try {
+    const db = dbInstance.getData();
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // Get today's appointments that are Confirmed or Arrived
+    const todayAppointments = (db.appointments || []).filter((a: any) => {
+      if (a.appointmentDate !== todayStr) return false;
+      if (a.status !== 'Confirmed' && a.status !== 'Arrived') return false;
+      
+      // Parse appointment time (e.g., "14:00" or "2:00 PM")
+      let timeStr = a.appointmentTime || '';
+      if (!timeStr) return false;
+      
+      let hour = 0, minute = 0;
+      
+      // Handle both "14:00" and "2:00 PM" formats
+      if (timeStr.includes('PM') || timeStr.includes('AM')) {
+        const parts = timeStr.split(' ');
+        const timeParts = parts[0].split(':');
+        hour = parseInt(timeParts[0]);
+        minute = parseInt(timeParts[1] || '0');
+        if (parts[1] === 'PM' && hour !== 12) hour += 12;
+        if (parts[1] === 'AM' && hour === 12) hour = 0;
+      } else {
+        const parts = timeStr.split(':');
+        hour = parseInt(parts[0]);
+        minute = parseInt(parts[1] || '0');
+      }
+      
+      const appointmentMinutes = hour * 60 + minute;
+      
+      // If appointment is more than 30 minutes ago, mark as No Show
+      const diffMinutes = currentMinutes - appointmentMinutes;
+      return diffMinutes > 30;
+    });
+
+    // Update each overdue appointment to No Show
+    let updated = 0;
+    for (const appointment of todayAppointments) {
+      appointment.status = 'No Show';
+      appointment.updatedAt = new Date().toISOString();
+      updated++;
+    }
+
+    if (updated > 0) {
+      dbInstance.save();
+      console.log(`✅ Auto-updated ${updated} appointment(s) to No Show`);
+    }
+  } catch (error) {
+    console.error('Error checking no-shows:', error);
+  }
+};
+
+// Run the check every minute
+setInterval(checkNoShows, 60000);
+
+// Also run on startup after a short delay
+setTimeout(checkNoShows, 5000);
+
+// ==========================================
+// 14. ROOT & HEALTH
 // ==========================================
 
 app.get('/', (req, res) => {
@@ -1407,6 +1484,7 @@ app.get('/', (req, res) => {
         'PUT /api/admin/doctors/:id',
         'PUT /api/admin/doctors/:id/feature',
         'DELETE /api/admin/doctors/:id',
+        'GET /api/admin/availability',
         'PUT /api/admin/availability',
         'DELETE /api/admin/availability/:date',
         'GET /api/admin/blocked-dates',
@@ -1428,7 +1506,7 @@ app.get('/health', (req, res) => {
 });
 
 // ==========================================
-// 14. 404 HANDLER
+// 15. 404 HANDLER
 // ==========================================
 
 app.use((req, res) => {
@@ -1445,7 +1523,7 @@ app.use((req, res) => {
 });
 
 // ==========================================
-// 15. START SERVER
+// 16. START SERVER
 // ==========================================
 
 app.listen(PORT, '0.0.0.0', () => {
@@ -1453,4 +1531,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`✅ Health check: http://localhost:${PORT}/health`);
   console.log(`✅ Swagger UI: http://localhost:${PORT}/api-docs`);
+  console.log(`✅ Auto No-Show checker enabled (runs every minute)`);
 });

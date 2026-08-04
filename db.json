@@ -152,24 +152,28 @@
     {
       "_id": "doc1",
       "id": "doc1",
-      "name": "Dr. Selama",
-      "title": "Specialist Doctor",
+      "name": "Dr. Selam",
+      "title": "Specialist",
       "bio": "Over 12 years of clinical excellence specializing in digital smile design, veneers, and full mouth rehabilitations.",
-      "imageUrl": "http://localhost:3000/uploads/doctors/doctor-1785850846876-353362245.jpg",
+      "imageUrl": "http://localhost:3000/uploads/doctors/doctor-1785877591298-355014987.jpg",
       "isFeatured": true,
       "createdAt": "2026-08-03T16:03:41.569Z",
-      "updatedAt": "2026-08-04T13:40:46.892Z"
+      "updatedAt": "2026-08-04T21:06:31.334Z",
+      "email": "selam@gmail.com",
+      "phone": "+25197736655"
     },
     {
       "_id": "doc2",
       "id": "doc2",
       "name": "Dr. Marcus Vance",
-      "title": "Orthodontics & Clear Aligner Specialist",
+      "title": "Orthodonist",
       "bio": "Certified Invisalign provider focusing on non-invasive bite corrections and aesthetic aligners for teens and adults.",
-      "imageUrl": "",
+      "imageUrl": "http://localhost:3000/uploads/doctors/doctor-1785877634752-9955631.jpg",
       "isFeatured": true,
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-04T13:40:56.850Z"
+      "updatedAt": "2026-08-04T21:07:14.756Z",
+      "email": "marcus@gmail.com",
+      "phone": "+251977882112"
     },
     {
       "_id": "doc3",
@@ -178,20 +182,33 @@
       "title": "Pediatric & Family Hygiene Expert",
       "bio": "Compassionate pediatric dental care establishing lifelong healthy habits with fun, stress-free clinical visits.",
       "imageUrl": "",
-      "isFeatured": true,
+      "isFeatured": false,
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-04T10:46:26.288Z"
+      "updatedAt": "2026-08-04T20:40:09.472Z"
     },
     {
       "_id": "doc4",
       "id": "doc4",
       "name": "Dr Abebe Kebde",
       "title": "Specialist Doctor",
-      "bio": "Very Good Doctor",
+      "bio": "over 10 years of experience",
       "imageUrl": "",
       "isFeatured": false,
       "createdAt": "2026-08-04T09:59:51.339Z",
-      "updatedAt": "2026-08-04T10:44:24.101Z"
+      "updatedAt": "2026-08-04T20:40:04.322Z"
+    },
+    {
+      "_id": "doc5",
+      "id": "doc5",
+      "name": "Dr. Kebde",
+      "title": "Family Dentist",
+      "bio": "Specialist for more than 10 years",
+      "imageUrl": "http://localhost:3000/uploads/doctors/doctor-1785877707900-467223071.jpg",
+      "isFeatured": true,
+      "createdAt": "2026-08-04T20:42:47.292Z",
+      "updatedAt": "2026-08-04T21:08:41.196Z",
+      "email": "kebdeee@gmail.com",
+      "phone": "+2519807523"
     }
   ],
   "availabilities": [
@@ -215,10 +232,11 @@
         "doc1",
         "doc2",
         "doc3",
-        "doc4"
+        "doc4",
+        "doc5"
       ],
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-04T18:21:22.270Z"
+      "updatedAt": "2026-08-04T21:08:58.926Z"
     },
     {
       "_id": "av3",
@@ -309,10 +327,11 @@
       "doctorIds": [
         "doc1",
         "doc2",
-        "doc3"
+        "doc3",
+        "doc4"
       ],
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-04T18:23:25.466Z"
     },
     {
       "_id": "av11",
@@ -333,10 +352,11 @@
       "doctorIds": [
         "doc1",
         "doc2",
-        "doc3"
+        "doc3",
+        "doc4"
       ],
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-04T19:08:59.863Z"
     },
     {
       "_id": "av13",
@@ -487,12 +507,11 @@
       "id": "av25",
       "date": "2026-08-31",
       "doctorIds": [
-        "doc1",
-        "doc2",
-        "doc3"
+        "doc3",
+        "doc4"
       ],
       "createdAt": "2026-08-03T16:03:41.572Z",
-      "updatedAt": "2026-08-03T16:03:41.572Z"
+      "updatedAt": "2026-08-04T18:23:32.733Z"
     },
     {
       "_id": "av26",
@@ -531,12 +550,6 @@
       "id": "blk4",
       "date": "2026-08-31",
       "reason": "Closing"
-    },
-    {
-      "_id": "blk5",
-      "id": "blk5",
-      "date": "2026-08-28",
-      "reason": "closing"
     }
   ],
   "appointments": [
@@ -635,14 +648,14 @@
       "appointmentDate": "2026-08-21",
       "appointmentTime": "11:00",
       "dentistName": "Dr. Elena Rostova",
-      "status": "Arrived",
+      "status": "No Show",
       "autoCanceled": false,
       "createdAt": "2026-08-04T09:57:01.383Z",
-      "updatedAt": "2026-08-04T09:57:01.385Z"
+      "updatedAt": "2026-08-04T21:09:11.078Z"
     }
   ],
   "websiteConfig": {
-    "announcement": "Announcement",
+    "announcement": "nhgghf",
     "bookingCutoffTime": "14:00"
   }
 }
