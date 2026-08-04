@@ -261,7 +261,6 @@ const swaggerOptions = {
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
-
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   explorer: true,
   customCss: '.swagger-ui .topbar { display: none }',
@@ -450,7 +449,10 @@ app.get('/api/slots', (req, res) => {
       return res.status(400).json({ error: 'date parameter is required' });
     }
 
-    const isBlocked = db.blockedDates?.some((b: any) => b.date === date) || false;
+    // ✅ Check if date is blocked
+    const blockedDates = db.blockedDates || [];
+    const isBlocked = blockedDates.some((b: any) => b.date === date);
+    
     if (isBlocked) {
       return res.json({ slots: [] });
     }
@@ -489,6 +491,21 @@ app.get('/api/slots', (req, res) => {
     res.json({ slots: availableSlots });
   } catch (error) {
     console.error('Error fetching slots:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ✅ GET blocked dates for public
+app.get('/api/blocked-dates', (req, res) => {
+  try {
+    const db = dbInstance.getData();
+    const blockedDates = (db.blockedDates || []).map((b: any) => ({
+      date: b.date,
+      reason: b.reason || 'Clinic Closed'
+    }));
+    res.json(blockedDates);
+  } catch (error) {
+    console.error('Error fetching blocked dates:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -542,7 +559,10 @@ app.post('/api/appointments', authenticateToken, (req: any, res) => {
 
     const db = dbInstance.getData();
 
-    const isBlocked = db.blockedDates?.some((b: any) => b.date === finalDate) || false;
+    // ✅ Check if date is blocked
+    const blockedDates = db.blockedDates || [];
+    const isBlocked = blockedDates.some((b: any) => b.date === finalDate);
+    
     if (isBlocked) {
       return res.status(400).json({ error: 'The clinic is closed on the selected date.' });
     }
@@ -678,12 +698,18 @@ app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) =>
       };
     });
 
+    // ✅ Format blocked dates consistently
+    const blockedDates = (db.blockedDates || []).map((b: any) => ({
+      date: b.date,
+      reason: b.reason || 'Clinic Closed'
+    }));
+
     res.json({
       services: db.services || [],
       doctors: db.doctors || [],
       appointments: formattedAppointments,
       availability: availabilityMap,
-      blockedDates: (db.blockedDates || []).map((b: any) => ({ date: b.date, reason: b.reason || '' })),
+      blockedDates: blockedDates,
       announcement: db.websiteConfig?.announcement || '',
       bookingCutoffTime: db.websiteConfig?.bookingCutoffTime || '14:00'
     });
@@ -961,7 +987,7 @@ app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req: 
 });
 
 // ==========================================
-// 10. ADMIN DOCTORS ENDPOINTS (NO PLACEHOLDER)
+// 10. ADMIN DOCTORS ENDPOINTS
 // ==========================================
 
 const getImageUrl = (req: Request, filename: string) => {
@@ -975,116 +1001,100 @@ const getDoctorImageUrl = (req: Request, doctor: { imageUrl?: string }) => {
   if (doctor.imageUrl && doctor.imageUrl.trim()) {
     return doctor.imageUrl;
   }
-  const protocol = req.get('x-forwarded-proto') || req.protocol;
-  const host = req.get('host');
-  return `${protocol}://${host}/assets/doctor-placeholder.svg`;
+  return '';
 };
 
-app.post(
-  '/api/admin/doctors',
-  authenticateToken,
-  requireAdmin,
-  upload.single('image'),
-  (req: any, res) => {
-    try {
-      const { name, title, bio, imageUrl, isFeatured } = req.body;
-      
-      // Use an uploaded file when present, otherwise fall back to an explicit image URL.
-      let finalImageUrl = '';
-      if (req.file) {
-        finalImageUrl = getImageUrl(req, req.file.filename);
-      } else if (typeof imageUrl === 'string' && imageUrl.trim()) {
-        finalImageUrl = imageUrl.trim();
-      }
-
-      if (!name) {
-        return res.status(400).json({ error: 'Doctor name is required.' });
-      }
-
-      const db = dbInstance.getData();
-
-      if (isFeatured) {
-        const featuredCount = (db.doctors || []).filter((d: any) => d.isFeatured).length;
-        if (featuredCount >= 3) {
-          return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
-        }
-      }
-
-      const newId = generateId('doc');
-      const newDoctor = {
-        _id: newId,
-        id: newId,
-        name,
-        title: title || 'Specialist Doctor',
-        bio: bio || '',
-        imageUrl: finalImageUrl,
-        isFeatured: Boolean(isFeatured),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      db.doctors = db.doctors || [];
-      db.doctors.push(newDoctor);
-      dbInstance.save();
-
-      res.status(201).json({ doctor: newDoctor });
-    } catch (error) {
-      console.error('Error creating doctor:', error);
-      res.status(500).json({ error: 'Internal server error' });
+app.post('/api/admin/doctors', authenticateToken, requireAdmin, upload.single('image'), (req: any, res) => {
+  try {
+    const { name, title, bio, imageUrl, isFeatured } = req.body;
+    
+    let finalImageUrl = '';
+    if (req.file) {
+      finalImageUrl = getImageUrl(req, req.file.filename);
+    } else if (typeof imageUrl === 'string' && imageUrl.trim()) {
+      finalImageUrl = imageUrl.trim();
     }
-  }
-);
 
-app.put(
-  '/api/admin/doctors/:id',
-  authenticateToken,
-  requireAdmin,
-  upload.single('image'),
-  (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const { name, title, bio, imageUrl, isFeatured } = req.body;
-
-      const db = dbInstance.getData();
-      const doctor = db.doctors.find((d: any) => d.id === id || d._id === id);
-
-      if (!doctor) {
-        return res.status(404).json({ error: 'Doctor not found.' });
-      }
-
-      // ✅ NO PLACEHOLDER - only update if new file uploaded
-      let finalImageUrl = doctor.imageUrl || '';
-      if (req.file) {
-        finalImageUrl = getImageUrl(req, req.file.filename);
-      } else if (typeof imageUrl === 'string') {
-        finalImageUrl = imageUrl.trim();
-      }
-
-      if (isFeatured && !doctor.isFeatured) {
-        const otherFeaturedCount = (db.doctors || []).filter(
-          (d: any) => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id
-        ).length;
-        if (otherFeaturedCount >= 3) {
-          return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
-        }
-      }
-
-      if (name) doctor.name = name;
-      if (title) doctor.title = title;
-      if (bio !== undefined) doctor.bio = bio;
-      doctor.imageUrl = finalImageUrl;
-      if (isFeatured !== undefined) doctor.isFeatured = Boolean(isFeatured);
-
-      doctor.updatedAt = new Date().toISOString();
-      dbInstance.save();
-
-      res.json({ doctor });
-    } catch (error) {
-      console.error('Error updating doctor:', error);
-      res.status(500).json({ error: 'Internal server error' });
+    if (!name) {
+      return res.status(400).json({ error: 'Doctor name is required.' });
     }
+
+    const db = dbInstance.getData();
+
+    if (isFeatured) {
+      const featuredCount = (db.doctors || []).filter((d: any) => d.isFeatured).length;
+      if (featuredCount >= 3) {
+        return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
+      }
+    }
+
+    const newId = generateId('doc');
+    const newDoctor = {
+      _id: newId,
+      id: newId,
+      name,
+      title: title || 'Specialist Doctor',
+      bio: bio || '',
+      imageUrl: finalImageUrl,
+      isFeatured: Boolean(isFeatured),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    db.doctors = db.doctors || [];
+    db.doctors.push(newDoctor);
+    dbInstance.save();
+
+    res.status(201).json({ doctor: newDoctor });
+  } catch (error) {
+    console.error('Error creating doctor:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-);
+});
+
+app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, upload.single('image'), (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const { name, title, bio, imageUrl, isFeatured } = req.body;
+
+    const db = dbInstance.getData();
+    const doctor = db.doctors.find((d: any) => d.id === id || d._id === id);
+
+    if (!doctor) {
+      return res.status(404).json({ error: 'Doctor not found.' });
+    }
+
+    let finalImageUrl = doctor.imageUrl || '';
+    if (req.file) {
+      finalImageUrl = getImageUrl(req, req.file.filename);
+    } else if (typeof imageUrl === 'string') {
+      finalImageUrl = imageUrl.trim();
+    }
+
+    if (isFeatured && !doctor.isFeatured) {
+      const otherFeaturedCount = (db.doctors || []).filter(
+        (d: any) => d.isFeatured && d.id !== doctor.id && d._id !== doctor._id
+      ).length;
+      if (otherFeaturedCount >= 3) {
+        return res.status(400).json({ error: 'Maximum of 3 featured doctors allowed' });
+      }
+    }
+
+    if (name) doctor.name = name;
+    if (title) doctor.title = title;
+    if (bio !== undefined) doctor.bio = bio;
+    doctor.imageUrl = finalImageUrl;
+    if (isFeatured !== undefined) doctor.isFeatured = Boolean(isFeatured);
+
+    doctor.updatedAt = new Date().toISOString();
+    dbInstance.save();
+
+    res.json({ doctor });
+  } catch (error) {
+    console.error('Error updating doctor:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 app.get('/api/admin/doctors', authenticateToken, requireAdmin, (req: any, res) => {
   try {
@@ -1187,7 +1197,11 @@ app.put('/api/admin/availability', authenticateToken, requireAdmin, (req: any, r
     }
 
     dbInstance.save();
-    res.json({ success: true });
+    res.json({ 
+      success: true, 
+      date, 
+      doctorIds 
+    });
   } catch (error) {
     console.error('Error setting availability:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -1213,6 +1227,7 @@ app.delete('/api/admin/availability/:date', authenticateToken, requireAdmin, (re
   }
 });
 
+// ✅ FIXED: POST blocked dates - ensures proper storage and returns the added blocked date
 app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date, reason } = req.body;
@@ -1222,44 +1237,93 @@ app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any,
     }
 
     const db = dbInstance.getData();
-    const existing = (db.blockedDates || []).find((b: any) => b.date === date);
+    
+    // Ensure blockedDates array exists
+    if (!db.blockedDates) {
+      db.blockedDates = [];
+    }
+    
+    // Check if already exists
+    const existingIndex = db.blockedDates.findIndex((b: any) => b.date === date);
 
-    if (existing) {
-      existing.reason = reason || existing.reason;
+    if (existingIndex !== -1) {
+      // Update existing
+      db.blockedDates[existingIndex].reason = reason || db.blockedDates[existingIndex].reason || 'Clinic Closed';
     } else {
+      // Add new
       const newId = generateId('blk');
-      db.blockedDates = db.blockedDates || [];
       db.blockedDates.push({
         _id: newId,
         id: newId,
-        date,
+        date: date,
         reason: reason || 'Clinic Closed'
       });
     }
 
     dbInstance.save();
-    res.json({ success: true });
+    
+    // Return the updated blocked dates list
+    const updatedBlockedDates = db.blockedDates.map((b: any) => ({
+      date: b.date,
+      reason: b.reason || 'Clinic Closed'
+    }));
+    
+    res.json({ 
+      success: true, 
+      blockedDates: updatedBlockedDates
+    });
   } catch (error) {
     console.error('Error adding blocked date:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// ✅ FIXED: DELETE blocked dates
 app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { date } = req.params;
     const db = dbInstance.getData();
 
-    const index = (db.blockedDates || []).findIndex((b: any) => b.date === date);
-
-    if (index !== -1) {
-      db.blockedDates.splice(index, 1);
-      dbInstance.save();
+    if (!db.blockedDates) {
+      db.blockedDates = [];
     }
 
-    res.json({ success: true });
+    const index = db.blockedDates.findIndex((b: any) => b.date === date);
+
+    if (index === -1) {
+      return res.status(404).json({ error: 'Blocked date not found.' });
+    }
+
+    db.blockedDates.splice(index, 1);
+    dbInstance.save();
+
+    // Return the updated blocked dates list
+    const updatedBlockedDates = db.blockedDates.map((b: any) => ({
+      date: b.date,
+      reason: b.reason || 'Clinic Closed'
+    }));
+
+    res.json({ 
+      success: true, 
+      blockedDates: updatedBlockedDates
+    });
   } catch (error) {
     console.error('Error removing blocked date:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ✅ GET blocked dates for admin
+app.get('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any, res) => {
+  try {
+    const db = dbInstance.getData();
+    const blockedDates = (db.blockedDates || []).map((b: any) => ({
+      date: b.date,
+      reason: b.reason || 'Clinic Closed'
+    }));
+    res.json(blockedDates);
+  } catch (error) {
+    console.error('Error fetching blocked dates:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1318,7 +1382,8 @@ app.get('/', (req, res) => {
         'GET /api/services',
         'GET /api/doctors',
         'GET /api/slots',
-        'GET /api/public/announcement'
+        'GET /api/public/announcement',
+        'GET /api/blocked-dates'
       ],
       auth: [
         'POST /api/auth/register',
@@ -1344,6 +1409,7 @@ app.get('/', (req, res) => {
         'DELETE /api/admin/doctors/:id',
         'PUT /api/admin/availability',
         'DELETE /api/admin/availability/:date',
+        'GET /api/admin/blocked-dates',
         'POST /api/admin/blocked-dates',
         'DELETE /api/admin/blocked-dates/:date',
         'PUT /api/admin/announcement',

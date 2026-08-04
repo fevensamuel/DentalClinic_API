@@ -152,13 +152,13 @@
     {
       "_id": "doc1",
       "id": "doc1",
-      "name": "Dr. Selamawit Moges",
-      "title": "DDS Cosmetic & Restorative Specialist",
+      "name": "Dr. Selama",
+      "title": "Specialist Doctor",
       "bio": "Over 12 years of clinical excellence specializing in digital smile design, veneers, and full mouth rehabilitations.",
-      "imageUrl": "",
+      "imageUrl": "http://localhost:3000/uploads/doctors/doctor-1785850846876-353362245.jpg",
       "isFeatured": true,
       "createdAt": "2026-08-03T16:03:41.569Z",
-      "updatedAt": "2026-08-04T12:18:10.121Z"
+      "updatedAt": "2026-08-04T13:40:46.892Z"
     },
     {
       "_id": "doc2",
@@ -167,9 +167,9 @@
       "title": "Orthodontics & Clear Aligner Specialist",
       "bio": "Certified Invisalign provider focusing on non-invasive bite corrections and aesthetic aligners for teens and adults.",
       "imageUrl": "",
-      "isFeatured": false,
+      "isFeatured": true,
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-04T10:59:35.189Z"
+      "updatedAt": "2026-08-04T13:40:56.850Z"
     },
     {
       "_id": "doc3",
@@ -214,10 +214,11 @@
       "doctorIds": [
         "doc1",
         "doc2",
-        "doc3"
+        "doc3",
+        "doc4"
       ],
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-04T18:21:22.270Z"
     },
     {
       "_id": "av3",
@@ -229,7 +230,7 @@
         "doc3"
       ],
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-04T17:37:25.758Z"
     },
     {
       "_id": "av4",
@@ -238,22 +239,21 @@
       "doctorIds": [
         "doc1",
         "doc2",
-        "doc3"
+        "doc3",
+        "doc4"
       ],
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-04T18:13:30.826Z"
     },
     {
       "_id": "av5",
       "id": "av5",
       "date": "2026-08-07",
       "doctorIds": [
-        "doc1",
-        "doc2",
-        "doc3"
+        "doc1"
       ],
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-04T17:37:35.696Z"
     },
     {
       "_id": "av6",
@@ -261,11 +261,10 @@
       "date": "2026-08-08",
       "doctorIds": [
         "doc1",
-        "doc2",
-        "doc3"
+        "doc4"
       ],
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-04T18:13:41.769Z"
     },
     {
       "_id": "av7",
@@ -514,6 +513,30 @@
       "id": "blk1",
       "date": "2026-12-25",
       "reason": "Christmas Holiday Closure"
+    },
+    {
+      "_id": "blk2",
+      "id": "blk2",
+      "date": "2026-08-18",
+      "reason": "End"
+    },
+    {
+      "_id": "blk3",
+      "id": "blk3",
+      "date": "2026-08-27",
+      "reason": "Holiday"
+    },
+    {
+      "_id": "blk4",
+      "id": "blk4",
+      "date": "2026-08-31",
+      "reason": "Closing"
+    },
+    {
+      "_id": "blk5",
+      "id": "blk5",
+      "date": "2026-08-28",
+      "reason": "closing"
     }
   ],
   "appointments": [
@@ -619,7 +642,7 @@
     }
   ],
   "websiteConfig": {
-    "announcement": "✨ Summer Promotion: 20% Off In-Office Teeth Whitening sessions this month!",
+    "announcement": "Announcement",
     "bookingCutoffTime": "14:00"
   }
 }
