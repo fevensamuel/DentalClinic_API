@@ -110,27 +110,27 @@
       "description": "Micro-dentistry therapy designed to eliminate infection, relieve pain, and preserve your natural tooth.",
       "duration": "90 mins",
       "price": "6000 ETB",
-      "promotionActive": true,
+      "promotionActive": false,
       "promotionDetails": "",
       "discountPercent": "50",
       "discountAmount": "",
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T19:00:58.986Z"
+      "updatedAt": "2026-08-04T12:08:26.680Z"
     },
     {
       "_id": "bi7wzqh7o",
       "id": "bi7wzqh7o",
       "category": "Cosmetic",
-      "title": "Laugh",
+      "title": "Brace",
       "description": "new service",
       "duration": "45 mins",
       "price": "3500",
-      "promotionActive": true,
+      "promotionActive": false,
       "promotionDetails": "",
       "discountPercent": "50",
       "discountAmount": "0 ETB",
       "createdAt": "2026-08-03T19:02:14.744Z",
-      "updatedAt": "2026-08-03T19:05:02.233Z"
+      "updatedAt": "2026-08-04T12:08:45.218Z"
     },
     {
       "_id": "n5ujpzuw2",
@@ -142,7 +142,7 @@
       "price": "5000 ETB",
       "promotionActive": false,
       "promotionDetails": "",
-      "discountPercent": 10,
+      "discountPercent": "10",
       "discountAmount": "0 ETB",
       "createdAt": "2026-08-04T09:58:35.039Z",
       "updatedAt": "2026-08-04T09:58:59.518Z"
@@ -156,9 +156,9 @@
       "title": "DDS Cosmetic & Restorative Specialist",
       "bio": "Over 12 years of clinical excellence specializing in digital smile design, veneers, and full mouth rehabilitations.",
       "imageUrl": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400",
-      "isFeatured": false,
+      "isFeatured": true,
       "createdAt": "2026-08-03T16:03:41.569Z",
-      "updatedAt": "2026-08-04T10:08:08.631Z"
+      "updatedAt": "2026-08-04T12:18:10.121Z"
     },
     {
       "_id": "doc2",
@@ -169,7 +169,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400",
       "isFeatured": false,
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-04T10:11:59.693Z"
+      "updatedAt": "2026-08-04T10:59:35.189Z"
     },
     {
       "_id": "doc3",
@@ -180,7 +180,7 @@
       "imageUrl": "https://images.unsplash.com/photo-1594824813573-246434de83fb?auto=format&fit=crop&q=80&w=400",
       "isFeatured": true,
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-04T10:11:37.577Z"
+      "updatedAt": "2026-08-04T10:46:26.288Z"
     },
     {
       "_id": "8jagyir6m",
@@ -189,9 +189,9 @@
       "title": "Specialist Doctor",
       "bio": "Very Good Doctor",
       "imageUrl": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&q=80",
-      "isFeatured": true,
+      "isFeatured": false,
       "createdAt": "2026-08-04T09:59:51.339Z",
-      "updatedAt": "2026-08-04T10:11:45.739Z"
+      "updatedAt": "2026-08-04T10:44:24.101Z"
     }
   ],
   "availabilities": [
@@ -608,8 +608,6 @@
       "id": "g3bqkrnx0",
       "patientId": "ztweoa36z",
       "patientName": "kebde",
-      "patientEmail": "kebde@gmail.com",
-      "patientPhone": "+251988776655",
       "serviceTitle": "Preventative Cleaning & Exam",
       "appointmentDate": "2026-08-21",
       "appointmentTime": "11:00",

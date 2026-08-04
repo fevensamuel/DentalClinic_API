@@ -7,9 +7,15 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import multer from 'multer'; // NEW
-import fs from 'fs'; // NEW
+import multer from 'multer';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import { dbInstance, generateId, AppointmentStatus } from './src/database';
+
+// ✅ ES Module fix for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -43,16 +49,14 @@ app.use(cors({
 }));
 
 // ==========================================
-// FILE UPLOAD CONFIGURATION (NEW)
+// 2. FILE UPLOAD CONFIGURATION
 // ==========================================
 
-// Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '../uploads/doctors');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -66,7 +70,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -76,7 +80,6 @@ const upload = multer({
   }
 });
 
-// Serve static files from uploads folder
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use(express.json());
@@ -94,7 +97,7 @@ const authLimiter = rateLimit({
 });
 
 // ==========================================
-// SWAGGER CONFIGURATION
+// 3. SWAGGER CONFIGURATION
 // ==========================================
 
 const swaggerOptions = {
@@ -163,7 +166,7 @@ const swaggerOptions = {
             name: { type: 'string', example: 'Dr. Evelyn Smith' },
             title: { type: 'string', example: 'Family Dentist' },
             bio: { type: 'string', example: 'Specializes in...' },
-            imageUrl: { type: 'string', example: 'https://...' },
+            imageUrl: { type: 'string', example: '' },
             isFeatured: { type: 'boolean', example: true }
           }
         },
@@ -268,7 +271,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 }));
 
 // ==========================================
-// AUTHENTICATION MIDDLEWARE
+// 4. AUTHENTICATION MIDDLEWARE
 // ==========================================
 
 const authenticateToken = (req: any, res: any, next: any) => {
@@ -296,7 +299,7 @@ const requireAdmin = (req: any, res: any, next: any) => {
 };
 
 // ==========================================
-// AUTH ENDPOINTS
+// 5. AUTH ENDPOINTS
 // ==========================================
 
 app.post('/api/auth/register', authLimiter, (req, res) => {
@@ -387,7 +390,7 @@ app.get('/api/auth/me', authenticateToken, (req: any, res) => {
 });
 
 // ==========================================
-// PUBLIC ENDPOINTS
+// 6. PUBLIC ENDPOINTS
 // ==========================================
 
 app.get('/api/services', (req, res) => {
@@ -518,7 +521,7 @@ app.get('/api/config', (req, res) => {
 });
 
 // ==========================================
-// PATIENT APPOINTMENT ENDPOINTS
+// 7. PATIENT APPOINTMENT ENDPOINTS
 // ==========================================
 
 app.post('/api/appointments', authenticateToken, (req: any, res) => {
@@ -648,7 +651,7 @@ app.put('/api/appointments/:id/cancel', authenticateToken, (req: any, res) => {
 });
 
 // ==========================================
-// ADMIN ENDPOINTS
+// 8. ADMIN ENDPOINTS
 // ==========================================
 
 app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) => {
@@ -858,7 +861,7 @@ app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (
 });
 
 // ==========================================
-// ADMIN SERVICES ENDPOINTS
+// 9. ADMIN SERVICES ENDPOINTS
 // ==========================================
 
 app.post('/api/admin/services', authenticateToken, requireAdmin, (req: any, res) => {
@@ -960,10 +963,9 @@ app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req: 
 });
 
 // ==========================================
-// ADMIN DOCTORS ENDPOINTS (UPDATED WITH FILE UPLOAD)
+// 10. ADMIN DOCTORS ENDPOINTS (NO PLACEHOLDER)
 // ==========================================
 
-// Helper function to get base URL for images
 const getImageUrl = (req: Request, filename: string) => {
   if (!filename) return '';
   const protocol = req.protocol;
@@ -971,17 +973,17 @@ const getImageUrl = (req: Request, filename: string) => {
   return `${protocol}://${host}/uploads/doctors/${filename}`;
 };
 
-// POST /api/admin/doctors - with file upload
 app.post(
   '/api/admin/doctors',
   authenticateToken,
   requireAdmin,
-  upload.single('image'), // 'image' is the field name in the form
+  upload.single('image'),
   (req: any, res) => {
     try {
       const { name, title, bio, imageUrl, isFeatured } = req.body;
-      // If a file was uploaded, use its filename to generate URL
-      let finalImageUrl = imageUrl || '';
+      
+      // ✅ NO PLACEHOLDER - only use uploaded file or empty string
+      let finalImageUrl = '';
       if (req.file) {
         finalImageUrl = getImageUrl(req, req.file.filename);
       }
@@ -1024,7 +1026,6 @@ app.post(
   }
 );
 
-// PUT /api/admin/doctors/:id - with file upload
 app.put(
   '/api/admin/doctors/:id',
   authenticateToken,
@@ -1042,13 +1043,11 @@ app.put(
         return res.status(404).json({ error: 'Doctor not found.' });
       }
 
-      // If a new file is uploaded, update imageUrl
-      let finalImageUrl = doctor.imageUrl; // keep existing by default
+      // ✅ NO PLACEHOLDER - only update if new file uploaded
+      let finalImageUrl = doctor.imageUrl || '';
       if (req.file) {
         finalImageUrl = getImageUrl(req, req.file.filename);
-        // Optionally delete old file? We can skip for simplicity.
       } else if (imageUrl !== undefined) {
-        // If imageUrl is explicitly provided in body, use it (for URL-based updates)
         finalImageUrl = imageUrl;
       }
 
@@ -1078,7 +1077,6 @@ app.put(
   }
 );
 
-// GET /api/admin/doctors - unchanged (just return list)
 app.get('/api/admin/doctors', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const db = dbInstance.getData();
@@ -1097,7 +1095,6 @@ app.get('/api/admin/doctors', authenticateToken, requireAdmin, (req: any, res) =
   }
 });
 
-// DELETE /api/admin/doctors/:id - unchanged
 app.delete('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
@@ -1117,7 +1114,6 @@ app.delete('/api/admin/doctors/:id', authenticateToken, requireAdmin, (req: any,
   }
 });
 
-// PUT /api/admin/doctors/:id/feature - unchanged
 app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
@@ -1150,7 +1146,7 @@ app.put('/api/admin/doctors/:id/feature', authenticateToken, requireAdmin, (req:
 });
 
 // ==========================================
-// ADMIN AVAILABILITY & BLOCKED DATES
+// 11. ADMIN AVAILABILITY & BLOCKED DATES
 // ==========================================
 
 app.put('/api/admin/availability', authenticateToken, requireAdmin, (req: any, res) => {
@@ -1260,7 +1256,7 @@ app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (r
 });
 
 // ==========================================
-// ADMIN CONFIGURATION (ANNOUNCEMENT & CUTOFF)
+// 12. ADMIN CONFIGURATION (ANNOUNCEMENT & CUTOFF)
 // ==========================================
 
 app.put('/api/admin/announcement', authenticateToken, requireAdmin, (req: any, res) => {
@@ -1296,7 +1292,7 @@ app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req: any, res) =>
 });
 
 // ==========================================
-// ROOT & HEALTH
+// 13. ROOT & HEALTH
 // ==========================================
 
 app.get('/', (req, res) => {
@@ -1357,7 +1353,7 @@ app.get('/health', (req, res) => {
 });
 
 // ==========================================
-// 404 HANDLER
+// 14. 404 HANDLER
 // ==========================================
 
 app.use((req, res) => {
@@ -1374,7 +1370,7 @@ app.use((req, res) => {
 });
 
 // ==========================================
-// START SERVER
+// 15. START SERVER
 // ==========================================
 
 app.listen(PORT, '0.0.0.0', () => {
