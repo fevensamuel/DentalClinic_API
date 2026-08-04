@@ -81,6 +81,7 @@ const upload = multer({
 });
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 app.use(express.json());
 
@@ -324,7 +325,7 @@ app.post('/api/auth/register', authLimiter, (req, res) => {
   }
 
   const passwordHash = bcrypt.hashSync(password, 10);
-  const newUserId = generateId();
+  const newUserId = generateId('usr');
 
   const newUser = {
     _id: newUserId,
@@ -423,7 +424,7 @@ app.get('/api/doctors', (req, res) => {
       name: d.name,
       title: d.title,
       bio: d.bio || '',
-      imageUrl: d.imageUrl || '',
+      imageUrl: getDoctorImageUrl(req, d),
       isFeatured: Boolean(d.isFeatured)
     }));
     res.json(doctors);
@@ -560,7 +561,7 @@ app.post('/api/appointments', authenticateToken, (req: any, res) => {
       return res.status(400).json({ error: 'This time slot is already booked for the selected specialist.' });
     }
 
-    const newAppId = generateId();
+    const newAppId = generateId('app');
     const newAppointment = {
       _id: newAppId,
       id: newAppId,
@@ -744,7 +745,7 @@ app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, 
         finalPatientId = existingPatient.id;
         finalPatientName = existingPatient.name;
       } else if (patientName && patientPhone) {
-        const newPatientId = generateId();
+        const newPatientId = generateId('usr');
         const passwordHash = bcrypt.hashSync('patient123', 10);
         const newPatient = {
           _id: newPatientId,
@@ -786,7 +787,7 @@ app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, 
     const validStatuses: AppointmentStatus[] = ['Pending', 'Confirmed', 'Completed', 'Arrived', 'No Show', 'Canceled'];
     const finalStatus: AppointmentStatus = status && validStatuses.includes(status) ? status : 'Confirmed';
 
-    const newAppId = generateId();
+    const newAppId = generateId('app');
     const newAppointment = {
       _id: newAppId,
       id: newAppId,
@@ -880,7 +881,7 @@ app.post('/api/admin/services', authenticateToken, requireAdmin, (req: any, res)
       return res.status(400).json({ error: 'A service with this title already exists.' });
     }
 
-    const newId = generateId();
+    const newId = generateId('srv');
     const newService = {
       _id: newId,
       id: newId,
@@ -968,9 +969,18 @@ app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req: 
 
 const getImageUrl = (req: Request, filename: string) => {
   if (!filename) return '';
-  const protocol = req.protocol;
+  const protocol = req.get('x-forwarded-proto') || req.protocol;
   const host = req.get('host');
   return `${protocol}://${host}/uploads/doctors/${filename}`;
+};
+
+const getDoctorImageUrl = (req: Request, doctor: { imageUrl?: string }) => {
+  if (doctor.imageUrl && doctor.imageUrl.trim()) {
+    return doctor.imageUrl;
+  }
+  const protocol = req.get('x-forwarded-proto') || req.protocol;
+  const host = req.get('host');
+  return `${protocol}://${host}/assets/doctor-placeholder.svg`;
 };
 
 app.post(
@@ -982,10 +992,12 @@ app.post(
     try {
       const { name, title, bio, imageUrl, isFeatured } = req.body;
       
-      // ✅ NO PLACEHOLDER - only use uploaded file or empty string
+      // Use an uploaded file when present, otherwise fall back to an explicit image URL.
       let finalImageUrl = '';
       if (req.file) {
         finalImageUrl = getImageUrl(req, req.file.filename);
+      } else if (typeof imageUrl === 'string' && imageUrl.trim()) {
+        finalImageUrl = imageUrl.trim();
       }
 
       if (!name) {
@@ -1001,7 +1013,7 @@ app.post(
         }
       }
 
-      const newId = generateId();
+      const newId = generateId('doc');
       const newDoctor = {
         _id: newId,
         id: newId,
@@ -1047,8 +1059,8 @@ app.put(
       let finalImageUrl = doctor.imageUrl || '';
       if (req.file) {
         finalImageUrl = getImageUrl(req, req.file.filename);
-      } else if (imageUrl !== undefined) {
-        finalImageUrl = imageUrl;
+      } else if (typeof imageUrl === 'string') {
+        finalImageUrl = imageUrl.trim();
       }
 
       if (isFeatured && !doctor.isFeatured) {
@@ -1085,7 +1097,7 @@ app.get('/api/admin/doctors', authenticateToken, requireAdmin, (req: any, res) =
       name: d.name,
       title: d.title,
       bio: d.bio || '',
-      imageUrl: d.imageUrl || '',
+      imageUrl: getDoctorImageUrl(req, d),
       isFeatured: Boolean(d.isFeatured)
     }));
     res.json(doctors);
@@ -1164,7 +1176,7 @@ app.put('/api/admin/availability', authenticateToken, requireAdmin, (req: any, r
       availability.doctorIds = doctorIds;
       availability.updatedAt = new Date().toISOString();
     } else {
-      const newId = generateId();
+      const newId = generateId('av');
       availability = {
         _id: newId,
         id: newId,
@@ -1218,7 +1230,7 @@ app.post('/api/admin/blocked-dates', authenticateToken, requireAdmin, (req: any,
     if (existing) {
       existing.reason = reason || existing.reason;
     } else {
-      const newId = generateId();
+      const newId = generateId('blk');
       db.blockedDates = db.blockedDates || [];
       db.blockedDates.push({
         _id: newId,

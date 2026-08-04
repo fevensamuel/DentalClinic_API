@@ -94,9 +94,107 @@ export interface DatabaseSchema {
 
 const DB_FILE = path.join(process.cwd(), 'db.json');
 
-// Helper to generate IDs
-export function generateId(): string {
-  return Math.random().toString(36).substring(2, 11);
+type IdPrefix = 'usr' | 'doc' | 'srv' | 'app' | 'av' | 'blk';
+
+const idCounters: Record<IdPrefix, number> = {
+  usr: 0,
+  doc: 0,
+  srv: 0,
+  app: 0,
+  av: 0,
+  blk: 0
+};
+
+function normalizePrefix(prefix?: string): IdPrefix {
+  const normalizedPrefix = (prefix || 'usr').toLowerCase();
+
+  switch (normalizedPrefix) {
+    case 'user':
+    case 'users':
+    case 'patient':
+    case 'patients':
+      return 'usr';
+    case 'doctor':
+    case 'doctors':
+      return 'doc';
+    case 'service':
+    case 'services':
+      return 'srv';
+    case 'appointment':
+    case 'appointments':
+      return 'app';
+    case 'availability':
+    case 'availabilities':
+      return 'av';
+    case 'blockeddate':
+    case 'blockeddates':
+    case 'blocked':
+    case 'block':
+      return 'blk';
+    default:
+      return normalizedPrefix as IdPrefix;
+  }
+}
+
+export function generateId(prefix?: string): string {
+  const normalizedPrefix = normalizePrefix(prefix);
+  idCounters[normalizedPrefix] = (idCounters[normalizedPrefix] || 0) + 1;
+  return `${normalizedPrefix}${idCounters[normalizedPrefix]}`;
+}
+
+export function syncIdCounters(data: Partial<DatabaseSchema>) {
+  const collections: Array<[keyof DatabaseSchema, IdPrefix]> = [
+    ['users', 'usr'],
+    ['services', 'srv'],
+    ['doctors', 'doc'],
+    ['appointments', 'app'],
+    ['availabilities', 'av'],
+    ['blockedDates', 'blk']
+  ];
+
+  collections.forEach(([collectionKey, prefix]) => {
+    const items = (data[collectionKey] as Array<{ id?: string; _id?: string }> | undefined) || [];
+    const maxNumber = items.reduce((max, item) => {
+      const match = (item.id || item._id || '').match(new RegExp(`^${prefix}(\\d+)$`, 'i'));
+      if (!match) return max;
+      return Math.max(max, parseInt(match[1], 10));
+    }, 0);
+
+    if (maxNumber > (idCounters[prefix] || 0)) {
+      idCounters[prefix] = maxNumber;
+    }
+  });
+}
+
+function assignSequentialIds<T extends { id?: string; _id?: string }>(items: T[], prefix: IdPrefix): T[] {
+  const usedNumbers = new Set<number>();
+
+  items.forEach((item) => {
+    const match = (item.id || item._id || '').match(new RegExp(`^${prefix}(\\d+)$`, 'i'));
+    if (match) {
+      usedNumbers.add(Number(match[1]));
+    }
+  });
+
+  let nextNumber = 1;
+  while (usedNumbers.has(nextNumber)) nextNumber += 1;
+
+  return items.map((item) => {
+    const match = (item.id || item._id || '').match(new RegExp(`^${prefix}(\\d+)$`, 'i'));
+    if (match) {
+      const normalizedId = `${prefix}${match[1]}`;
+      item._id = normalizedId;
+      item.id = normalizedId;
+      return item;
+    }
+
+    const assignedId = `${prefix}${nextNumber}`;
+    usedNumbers.add(nextNumber);
+    nextNumber += 1;
+    item._id = assignedId;
+    item.id = assignedId;
+    return item;
+  });
 }
 
 function getInitialData(): DatabaseSchema {
@@ -110,7 +208,7 @@ function getInitialData(): DatabaseSchema {
       name: 'Dr. Selamawit Moges',
       title: 'DDS Cosmetic & Restorative Specialist',
       bio: 'Over 12 years of clinical excellence specializing in digital smile design, veneers, and full mouth rehabilitations.',
-      imageUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400',
+      imageUrl: '',
       isFeatured: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -121,7 +219,7 @@ function getInitialData(): DatabaseSchema {
       name: 'Dr. Marcus Vance',
       title: 'Orthodontics & Clear Aligner Specialist',
       bio: 'Certified Invisalign provider focusing on non-invasive bite corrections and aesthetic aligners for teens and adults.',
-      imageUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400',
+      imageUrl: '',
       isFeatured: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -132,7 +230,7 @@ function getInitialData(): DatabaseSchema {
       name: 'Dr. Elena Rostova',
       title: 'Pediatric & Family Hygiene Expert',
       bio: 'Compassionate pediatric dental care establishing lifelong healthy habits with fun, stress-free clinical visits.',
-      imageUrl: 'https://images.unsplash.com/photo-1594824813573-246434de83fb?auto=format&fit=crop&q=80&w=400',
+      imageUrl: '',
       isFeatured: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -209,13 +307,14 @@ function getInitialData(): DatabaseSchema {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
     const dateStr = d.toISOString().split('T')[0];
-    
+
     // Skip Sundays
     if (d.getDay() !== 0) {
-      let docIds: string[] = ['doc1', 'doc2', 'doc3'];
+      const docIds: string[] = ['doc1', 'doc2', 'doc3'];
+      const availabilityId = generateId('av');
       defaultAvailabilities.push({
-        _id: 'av_' + dateStr,
-        id: 'av_' + dateStr,
+        _id: availabilityId,
+        id: availabilityId,
         date: dateStr,
         doctorIds: docIds,
         createdAt: new Date().toISOString(),
@@ -224,10 +323,11 @@ function getInitialData(): DatabaseSchema {
     }
   }
 
+  const blockedDateId = generateId('blk');
   const defaultBlockedDates: BlockedDate[] = [
     {
-      _id: 'blk1',
-      id: 'blk1',
+      _id: blockedDateId,
+      id: blockedDateId,
       date: '2026-12-25',
       reason: 'Christmas Holiday Closure'
     }
@@ -303,9 +403,11 @@ class Database {
       if (fs.existsSync(DB_FILE)) {
         const fileContent = fs.readFileSync(DB_FILE, 'utf8');
         this.data = JSON.parse(fileContent);
+        syncIdCounters(this.data);
         this.migrateIfNeeded();
       } else {
         this.data = getInitialData();
+        syncIdCounters(this.data);
         this.save();
       }
     } catch (error) {
@@ -319,10 +421,8 @@ class Database {
     if (!this.data) return;
     let modified = false;
 
-    // Ensure users have phone numbers
-    this.data.users = (this.data.users || []).map((u: any, idx: number) => ({
-      _id: u._id || u.id || generateId(),
-      id: u.id || u._id || generateId(),
+    const userCandidates = (this.data.users || []).map((u: any, idx: number) => ({
+      ...u,
       name: u.name || 'User',
       email: u.email || undefined,
       phone: u.phone || (u.role === 'admin' ? '+251911000000' : `+251922000${100 + idx}`),
@@ -331,9 +431,18 @@ class Database {
       createdAt: u.createdAt || new Date().toISOString(),
       updatedAt: u.updatedAt || new Date().toISOString()
     }));
+    const previousUserIds = userCandidates.map((u: any) => u.id || u._id || '');
+    const normalizedUsers = assignSequentialIds(userCandidates, 'usr');
+    const userIdMap = new Map<string, string>();
+    previousUserIds.forEach((previousId, index) => {
+      const newId = normalizedUsers[index]?.id || normalizedUsers[index]?._id || '';
+      if (previousId && previousId !== newId) {
+        userIdMap.set(previousId, newId);
+      }
+    });
+    this.data.users = normalizedUsers;
 
-    // Ensure all services have title, category, etc.
-    this.data.services = (this.data.services || []).map((s: any) => {
+    const serviceCandidates = (this.data.services || []).map((s: any) => {
       const title = s.title || s.name || 'Dental Service';
       const category = s.category || 'preventive';
       const duration = s.duration || '45 mins';
@@ -344,8 +453,7 @@ class Database {
         priceVal = '1500 ETB';
       }
       return {
-        _id: s._id || s.id || generateId(),
-        id: s.id || s._id || generateId(),
+        ...s,
         category,
         title,
         description: s.description || '',
@@ -359,11 +467,19 @@ class Database {
         updatedAt: s.updatedAt || new Date().toISOString()
       };
     });
+    const previousServiceIds = serviceCandidates.map((s: any) => s.id || s._id || '');
+    const normalizedServices = assignSequentialIds(serviceCandidates, 'srv');
+    const serviceIdMap = new Map<string, string>();
+    previousServiceIds.forEach((previousId, index) => {
+      const newId = normalizedServices[index]?.id || normalizedServices[index]?._id || '';
+      if (previousId && previousId !== newId) {
+        serviceIdMap.set(previousId, newId);
+      }
+    });
+    this.data.services = normalizedServices;
 
-    // Ensure doctors have id field
-    this.data.doctors = this.data.doctors.map((d: any) => ({
-      _id: d._id || d.id || generateId(),
-      id: d.id || d._id || generateId(),
+    const doctorCandidates = this.data.doctors.map((d: any) => ({
+      ...d,
       name: d.name || '',
       title: d.title || '',
       bio: d.bio || '',
@@ -372,11 +488,19 @@ class Database {
       createdAt: d.createdAt || new Date().toISOString(),
       updatedAt: d.updatedAt || new Date().toISOString()
     }));
+    const previousDoctorIds = doctorCandidates.map((d: any) => d.id || d._id || '');
+    const normalizedDoctors = assignSequentialIds(doctorCandidates, 'doc');
+    const doctorIdMap = new Map<string, string>();
+    previousDoctorIds.forEach((previousId, index) => {
+      const newId = normalizedDoctors[index]?.id || normalizedDoctors[index]?._id || '';
+      if (previousId && previousId !== newId) {
+        doctorIdMap.set(previousId, newId);
+      }
+    });
+    this.data.doctors = normalizedDoctors;
 
-    // Ensure appointments have serviceTitle, dentistName, appointmentDate, appointmentTime, status, autoCanceled
-    this.data.appointments = this.data.appointments.map((a: any) => ({
-      _id: a._id || a.id || generateId(),
-      id: a.id || a._id || generateId(),
+    const appointmentCandidates = this.data.appointments.map((a: any) => ({
+      ...a,
       patientId: a.patientId || 'usr2',
       patientName: a.patientName || 'Patient',
       serviceTitle: a.serviceTitle || a.serviceName || 'Dental Cleaning',
@@ -390,6 +514,43 @@ class Database {
       createdAt: a.createdAt || new Date().toISOString(),
       updatedAt: a.updatedAt || new Date().toISOString()
     }));
+    const normalizedAppointments = assignSequentialIds(appointmentCandidates, 'app');
+    normalizedAppointments.forEach((appointment: any) => {
+      if (appointment.patientId && userIdMap.has(appointment.patientId)) {
+        appointment.patientId = userIdMap.get(appointment.patientId)!;
+      }
+      if (appointment.serviceId && serviceIdMap.has(appointment.serviceId)) {
+        appointment.serviceId = serviceIdMap.get(appointment.serviceId)!;
+      }
+      if (appointment.doctorId && doctorIdMap.has(appointment.doctorId)) {
+        appointment.doctorId = doctorIdMap.get(appointment.doctorId)!;
+      }
+    });
+    this.data.appointments = normalizedAppointments;
+
+    const availabilityCandidates = (this.data.availabilities || []).map((a: any) => ({
+      ...a,
+      date: a.date || '',
+      doctorIds: a.doctorIds || [],
+      createdAt: a.createdAt || new Date().toISOString(),
+      updatedAt: a.updatedAt || new Date().toISOString()
+    }));
+    const normalizedAvailabilities = assignSequentialIds(availabilityCandidates, 'av');
+    normalizedAvailabilities.forEach((availability: any) => {
+      availability.doctorIds = (availability.doctorIds || []).map((doctorId: string) => {
+        return doctorIdMap.has(doctorId) ? doctorIdMap.get(doctorId)! : doctorId;
+      });
+    });
+    this.data.availabilities = normalizedAvailabilities;
+
+    const blockedDateCandidates = (this.data.blockedDates || []).map((b: any) => ({
+      ...b,
+      date: b.date || '',
+      reason: b.reason || 'Clinic Closed'
+    }));
+    this.data.blockedDates = assignSequentialIds(blockedDateCandidates, 'blk');
+
+    syncIdCounters(this.data);
 
     // Enforce max 3 featured doctors rule
     const featuredDocs = this.data.doctors.filter(d => d.isFeatured);

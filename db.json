@@ -23,8 +23,8 @@
       "updatedAt": "2026-08-03T16:03:41.572Z"
     },
     {
-      "_id": "p2hgp703u",
-      "id": "p2hgp703u",
+      "_id": "usr3",
+      "id": "usr3",
       "name": "Abebe",
       "email": "abebe@gmail.com",
       "phone": "+251911223344",
@@ -34,8 +34,8 @@
       "updatedAt": "2026-08-03T19:58:27.810Z"
     },
     {
-      "_id": "ztweoa36z",
-      "id": "ztweoa36z",
+      "_id": "usr4",
+      "id": "usr4",
       "name": "kebde",
       "email": "kebde@gmail.com",
       "phone": "+251988776655",
@@ -45,8 +45,8 @@
       "updatedAt": "2026-08-03T20:03:47.159Z"
     },
     {
-      "_id": "2krbixpjg",
-      "id": "2krbixpjg",
+      "_id": "usr5",
+      "id": "usr5",
       "name": "Hana",
       "email": "hana@gmail.com",
       "phone": "+251922553344",
@@ -118,8 +118,8 @@
       "updatedAt": "2026-08-04T12:08:26.680Z"
     },
     {
-      "_id": "bi7wzqh7o",
-      "id": "bi7wzqh7o",
+      "_id": "srv5",
+      "id": "srv5",
       "category": "Cosmetic",
       "title": "Brace",
       "description": "new service",
@@ -133,8 +133,8 @@
       "updatedAt": "2026-08-04T12:08:45.218Z"
     },
     {
-      "_id": "n5ujpzuw2",
-      "id": "n5ujpzuw2",
+      "_id": "srv6",
+      "id": "srv6",
       "category": "Cosmetic",
       "title": "Teeth Whitening",
       "description": "Whitening teeth in just 1 hour",
@@ -155,7 +155,7 @@
       "name": "Dr. Selamawit Moges",
       "title": "DDS Cosmetic & Restorative Specialist",
       "bio": "Over 12 years of clinical excellence specializing in digital smile design, veneers, and full mouth rehabilitations.",
-      "imageUrl": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400",
+      "imageUrl": "",
       "isFeatured": true,
       "createdAt": "2026-08-03T16:03:41.569Z",
       "updatedAt": "2026-08-04T12:18:10.121Z"
@@ -166,7 +166,7 @@
       "name": "Dr. Marcus Vance",
       "title": "Orthodontics & Clear Aligner Specialist",
       "bio": "Certified Invisalign provider focusing on non-invasive bite corrections and aesthetic aligners for teens and adults.",
-      "imageUrl": "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400",
+      "imageUrl": "",
       "isFeatured": false,
       "createdAt": "2026-08-03T16:03:41.571Z",
       "updatedAt": "2026-08-04T10:59:35.189Z"
@@ -177,18 +177,18 @@
       "name": "Dr. Elena Rostova",
       "title": "Pediatric & Family Hygiene Expert",
       "bio": "Compassionate pediatric dental care establishing lifelong healthy habits with fun, stress-free clinical visits.",
-      "imageUrl": "https://images.unsplash.com/photo-1594824813573-246434de83fb?auto=format&fit=crop&q=80&w=400",
+      "imageUrl": "",
       "isFeatured": true,
       "createdAt": "2026-08-03T16:03:41.571Z",
       "updatedAt": "2026-08-04T10:46:26.288Z"
     },
     {
-      "_id": "8jagyir6m",
-      "id": "8jagyir6m",
+      "_id": "doc4",
+      "id": "doc4",
       "name": "Dr Abebe Kebde",
       "title": "Specialist Doctor",
       "bio": "Very Good Doctor",
-      "imageUrl": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&q=80",
+      "imageUrl": "",
       "isFeatured": false,
       "createdAt": "2026-08-04T09:59:51.339Z",
       "updatedAt": "2026-08-04T10:44:24.101Z"
@@ -196,8 +196,8 @@
   ],
   "availabilities": [
     {
-      "_id": "av_2026-08-03",
-      "id": "av_2026-08-03",
+      "_id": "av1",
+      "id": "av1",
       "date": "2026-08-03",
       "doctorIds": [
         "doc1",
@@ -208,8 +208,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-04",
-      "id": "av_2026-08-04",
+      "_id": "av2",
+      "id": "av2",
       "date": "2026-08-04",
       "doctorIds": [
         "doc1",
@@ -220,8 +220,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-05",
-      "id": "av_2026-08-05",
+      "_id": "av3",
+      "id": "av3",
       "date": "2026-08-05",
       "doctorIds": [
         "doc1",
@@ -232,8 +232,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-06",
-      "id": "av_2026-08-06",
+      "_id": "av4",
+      "id": "av4",
       "date": "2026-08-06",
       "doctorIds": [
         "doc1",
@@ -244,8 +244,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-07",
-      "id": "av_2026-08-07",
+      "_id": "av5",
+      "id": "av5",
       "date": "2026-08-07",
       "doctorIds": [
         "doc1",
@@ -256,8 +256,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-08",
-      "id": "av_2026-08-08",
+      "_id": "av6",
+      "id": "av6",
       "date": "2026-08-08",
       "doctorIds": [
         "doc1",
@@ -268,8 +268,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-10",
-      "id": "av_2026-08-10",
+      "_id": "av7",
+      "id": "av7",
       "date": "2026-08-10",
       "doctorIds": [
         "doc1",
@@ -280,8 +280,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-11",
-      "id": "av_2026-08-11",
+      "_id": "av8",
+      "id": "av8",
       "date": "2026-08-11",
       "doctorIds": [
         "doc1",
@@ -292,8 +292,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-12",
-      "id": "av_2026-08-12",
+      "_id": "av9",
+      "id": "av9",
       "date": "2026-08-12",
       "doctorIds": [
         "doc1",
@@ -304,8 +304,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-13",
-      "id": "av_2026-08-13",
+      "_id": "av10",
+      "id": "av10",
       "date": "2026-08-13",
       "doctorIds": [
         "doc1",
@@ -316,8 +316,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-14",
-      "id": "av_2026-08-14",
+      "_id": "av11",
+      "id": "av11",
       "date": "2026-08-14",
       "doctorIds": [
         "doc1",
@@ -328,8 +328,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-15",
-      "id": "av_2026-08-15",
+      "_id": "av12",
+      "id": "av12",
       "date": "2026-08-15",
       "doctorIds": [
         "doc1",
@@ -340,8 +340,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-17",
-      "id": "av_2026-08-17",
+      "_id": "av13",
+      "id": "av13",
       "date": "2026-08-17",
       "doctorIds": [
         "doc1",
@@ -352,8 +352,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-18",
-      "id": "av_2026-08-18",
+      "_id": "av14",
+      "id": "av14",
       "date": "2026-08-18",
       "doctorIds": [
         "doc1",
@@ -364,8 +364,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-19",
-      "id": "av_2026-08-19",
+      "_id": "av15",
+      "id": "av15",
       "date": "2026-08-19",
       "doctorIds": [
         "doc1",
@@ -376,8 +376,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-20",
-      "id": "av_2026-08-20",
+      "_id": "av16",
+      "id": "av16",
       "date": "2026-08-20",
       "doctorIds": [
         "doc1",
@@ -388,8 +388,8 @@
       "updatedAt": "2026-08-03T16:03:41.571Z"
     },
     {
-      "_id": "av_2026-08-21",
-      "id": "av_2026-08-21",
+      "_id": "av17",
+      "id": "av17",
       "date": "2026-08-21",
       "doctorIds": [
         "doc1",
@@ -400,8 +400,8 @@
       "updatedAt": "2026-08-03T16:03:41.572Z"
     },
     {
-      "_id": "av_2026-08-22",
-      "id": "av_2026-08-22",
+      "_id": "av18",
+      "id": "av18",
       "date": "2026-08-22",
       "doctorIds": [
         "doc1",
@@ -412,8 +412,8 @@
       "updatedAt": "2026-08-03T16:03:41.572Z"
     },
     {
-      "_id": "av_2026-08-24",
-      "id": "av_2026-08-24",
+      "_id": "av19",
+      "id": "av19",
       "date": "2026-08-24",
       "doctorIds": [
         "doc1",
@@ -424,8 +424,8 @@
       "updatedAt": "2026-08-03T16:03:41.572Z"
     },
     {
-      "_id": "av_2026-08-25",
-      "id": "av_2026-08-25",
+      "_id": "av20",
+      "id": "av20",
       "date": "2026-08-25",
       "doctorIds": [
         "doc1",
@@ -436,8 +436,8 @@
       "updatedAt": "2026-08-03T16:03:41.572Z"
     },
     {
-      "_id": "av_2026-08-26",
-      "id": "av_2026-08-26",
+      "_id": "av21",
+      "id": "av21",
       "date": "2026-08-26",
       "doctorIds": [
         "doc1",
@@ -448,8 +448,8 @@
       "updatedAt": "2026-08-03T16:03:41.572Z"
     },
     {
-      "_id": "av_2026-08-27",
-      "id": "av_2026-08-27",
+      "_id": "av22",
+      "id": "av22",
       "date": "2026-08-27",
       "doctorIds": [
         "doc1",
@@ -460,8 +460,8 @@
       "updatedAt": "2026-08-03T16:03:41.572Z"
     },
     {
-      "_id": "av_2026-08-28",
-      "id": "av_2026-08-28",
+      "_id": "av23",
+      "id": "av23",
       "date": "2026-08-28",
       "doctorIds": [
         "doc1",
@@ -472,8 +472,8 @@
       "updatedAt": "2026-08-03T16:03:41.572Z"
     },
     {
-      "_id": "av_2026-08-29",
-      "id": "av_2026-08-29",
+      "_id": "av24",
+      "id": "av24",
       "date": "2026-08-29",
       "doctorIds": [
         "doc1",
@@ -484,8 +484,8 @@
       "updatedAt": "2026-08-03T16:03:41.572Z"
     },
     {
-      "_id": "av_2026-08-31",
-      "id": "av_2026-08-31",
+      "_id": "av25",
+      "id": "av25",
       "date": "2026-08-31",
       "doctorIds": [
         "doc1",
@@ -496,8 +496,8 @@
       "updatedAt": "2026-08-03T16:03:41.572Z"
     },
     {
-      "_id": "av_2026-09-01",
-      "id": "av_2026-09-01",
+      "_id": "av26",
+      "id": "av26",
       "date": "2026-09-01",
       "doctorIds": [
         "doc1",
@@ -534,8 +534,8 @@
       "updatedAt": "2026-08-03T20:28:31.498Z"
     },
     {
-      "_id": "lomcy2fo5",
-      "id": "lomcy2fo5",
+      "_id": "app2",
+      "id": "app2",
       "patientId": "p2hgp703u",
       "patientName": "Abebe",
       "serviceTitle": "Professional Teeth Whitening",
@@ -548,8 +548,8 @@
       "updatedAt": "2026-08-03T19:58:27.813Z"
     },
     {
-      "_id": "kdmspszgp",
-      "id": "kdmspszgp",
+      "_id": "app3",
+      "id": "app3",
       "patientId": "p2hgp703u",
       "patientName": "Abebe",
       "serviceTitle": "Professional Teeth Whitening",
@@ -562,8 +562,8 @@
       "updatedAt": "2026-08-03T20:02:50.563Z"
     },
     {
-      "_id": "2bvdp2s7m",
-      "id": "2bvdp2s7m",
+      "_id": "app4",
+      "id": "app4",
       "patientId": "ztweoa36z",
       "patientName": "kebde",
       "serviceTitle": "Laugh",
@@ -576,8 +576,8 @@
       "updatedAt": "2026-08-03T20:16:43.026Z"
     },
     {
-      "_id": "kfi9735c8",
-      "id": "kfi9735c8",
+      "_id": "app5",
+      "id": "app5",
       "patientId": "ztweoa36z",
       "patientName": "kebde",
       "serviceTitle": "Preventative Cleaning & Exam",
@@ -590,8 +590,8 @@
       "updatedAt": "2026-08-03T20:23:32.804Z"
     },
     {
-      "_id": "gmkic5vab",
-      "id": "gmkic5vab",
+      "_id": "app6",
+      "id": "app6",
       "patientId": "2krbixpjg",
       "patientName": "Hana",
       "serviceTitle": "Professional Teeth Whitening",
@@ -604,8 +604,8 @@
       "updatedAt": "2026-08-03T20:43:15.455Z"
     },
     {
-      "_id": "g3bqkrnx0",
-      "id": "g3bqkrnx0",
+      "_id": "app7",
+      "id": "app7",
       "patientId": "ztweoa36z",
       "patientName": "kebde",
       "serviceTitle": "Preventative Cleaning & Exam",
