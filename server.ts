@@ -9,13 +9,10 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import multer from 'multer';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import { dbInstance, generateId, AppointmentStatus } from './src/database';
 
-// ✅ ES Module fix for __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// ✅ Resolve paths from the project root so the built server works in development and on Render
+const appRoot = process.cwd();
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -52,7 +49,7 @@ app.use(cors({
 // 2. FILE UPLOAD CONFIGURATION
 // ==========================================
 
-const uploadDir = path.join(__dirname, '../uploads/doctors');
+const uploadDir = path.join(appRoot, 'uploads', 'doctors');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -80,8 +77,8 @@ const upload = multer({
   }
 });
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
+app.use('/uploads', express.static(path.join(appRoot, 'uploads')));
+app.use('/assets', express.static(path.join(appRoot, 'assets')));
 
 app.use(express.json());
 
