@@ -54,6 +54,28 @@
       "role": "patient",
       "createdAt": "2026-08-03T20:43:15.443Z",
       "updatedAt": "2026-08-03T20:43:15.444Z"
+    },
+    {
+      "_id": "usr6",
+      "id": "usr6",
+      "name": "Doe",
+      "phone": "+251988770099",
+      "email": "doe@gmail.com",
+      "passwordHash": "$2b$10$62zbCO5Omn/Ermzh15UpheePJbjua9e4CFBn5OPlS64WZ.uHk63yS",
+      "role": "patient",
+      "createdAt": "2026-08-04T23:12:34.230Z",
+      "updatedAt": "2026-08-04T23:12:34.230Z"
+    },
+    {
+      "_id": "usr7",
+      "id": "usr7",
+      "name": "Selma Kedir",
+      "phone": "+251988226351",
+      "email": "selmak@gmail.com",
+      "passwordHash": "$2b$10$FEWaezn0AMoiZqlYIVsBQe1pVrUohwafwg4wDJPmEso7pj2vNegOO",
+      "role": "patient",
+      "createdAt": "2026-08-05T14:50:31.350Z",
+      "updatedAt": "2026-08-05T14:50:31.350Z"
     }
   ],
   "services": [
@@ -65,12 +87,12 @@
       "description": "Comprehensive dental hygiene appointment including ultrasonic scaling, polishing, flossing, and oral cancer screening.",
       "duration": "45 mins",
       "price": "1500 ETB",
-      "promotionActive": false,
+      "promotionActive": true,
       "promotionDetails": "",
-      "discountPercent": "",
+      "discountPercent": 50,
       "discountAmount": "",
       "createdAt": "2026-08-03T16:03:41.571Z",
-      "updatedAt": "2026-08-03T16:03:41.571Z"
+      "updatedAt": "2026-08-05T11:28:24.479Z"
     },
     {
       "_id": "srv2",
@@ -193,9 +215,11 @@
       "title": "Specialist Doctor",
       "bio": "over 10 years of experience",
       "imageUrl": "",
-      "isFeatured": false,
+      "isFeatured": true,
       "createdAt": "2026-08-04T09:59:51.339Z",
-      "updatedAt": "2026-08-04T20:40:04.322Z"
+      "updatedAt": "2026-08-05T11:32:52.444Z",
+      "email": "abe@gmail.com",
+      "phone": "+251988223574"
     },
     {
       "_id": "doc5",
@@ -204,9 +228,9 @@
       "title": "Family Dentist",
       "bio": "Specialist for more than 10 years",
       "imageUrl": "http://localhost:3000/uploads/doctors/doctor-1785877707900-467223071.jpg",
-      "isFeatured": true,
+      "isFeatured": false,
       "createdAt": "2026-08-04T20:42:47.292Z",
-      "updatedAt": "2026-08-04T21:08:41.196Z",
+      "updatedAt": "2026-08-05T11:32:33.446Z",
       "email": "kebdeee@gmail.com",
       "phone": "+2519807523"
     }
@@ -550,6 +574,12 @@
       "id": "blk4",
       "date": "2026-08-31",
       "reason": "Closing"
+    },
+    {
+      "_id": "blk5",
+      "id": "blk5",
+      "date": "2026-08-26",
+      "reason": "Closing"
     }
   ],
   "appointments": [
@@ -578,10 +608,10 @@
       "appointmentDate": "2026-08-05",
       "appointmentTime": "12:00 PM",
       "dentistName": "Dr. Marcus Vance",
-      "status": "Confirmed",
+      "status": "No Show",
       "autoCanceled": false,
       "createdAt": "2026-08-03T19:58:27.813Z",
-      "updatedAt": "2026-08-03T19:58:27.813Z"
+      "updatedAt": "2026-08-05T11:02:33.571Z"
     },
     {
       "_id": "app3",
@@ -634,10 +664,10 @@
       "appointmentDate": "2026-08-05",
       "appointmentTime": "11:00",
       "dentistName": "Dr. Marcus Vance",
-      "status": "Arrived",
+      "status": "No Show",
       "autoCanceled": false,
       "createdAt": "2026-08-03T20:43:15.455Z",
-      "updatedAt": "2026-08-03T20:43:15.455Z"
+      "updatedAt": "2026-08-05T11:02:33.571Z"
     },
     {
       "_id": "app7",
@@ -652,10 +682,82 @@
       "autoCanceled": false,
       "createdAt": "2026-08-04T09:57:01.383Z",
       "updatedAt": "2026-08-04T21:09:11.078Z"
+    },
+    {
+      "_id": "app8",
+      "id": "app8",
+      "patientId": "usr6",
+      "patientName": "Doe",
+      "serviceTitle": "Preventative Cleaning & Exam",
+      "appointmentDate": "2026-08-26",
+      "appointmentTime": "10:00 AM",
+      "dentistName": "Assigned Dentist",
+      "status": "Canceled",
+      "autoCanceled": false,
+      "createdAt": "2026-08-04T23:12:45.729Z",
+      "updatedAt": "2026-08-05T11:38:28.960Z"
+    },
+    {
+      "_id": "app9",
+      "id": "app9",
+      "patientId": "usr6",
+      "patientName": "Doe",
+      "serviceTitle": "Brace",
+      "appointmentDate": "2026-08-07",
+      "appointmentTime": "02:00 PM",
+      "dentistName": "Assigned Dentist",
+      "status": "No Show",
+      "autoCanceled": false,
+      "createdAt": "2026-08-05T11:18:20.214Z",
+      "updatedAt": "2026-08-05T11:38:50.757Z"
+    },
+    {
+      "_id": "app10",
+      "id": "app10",
+      "patientId": "usr6",
+      "patientName": "Doe",
+      "serviceTitle": "Preventative Cleaning & Exam",
+      "appointmentDate": "2026-08-28",
+      "appointmentTime": "04:00 PM",
+      "dentistName": "Dr. Selam",
+      "status": "Confirmed",
+      "autoCanceled": false,
+      "createdAt": "2026-08-05T11:41:22.057Z",
+      "updatedAt": "2026-08-05T11:42:56.952Z"
+    },
+    {
+      "_id": "app11",
+      "id": "app11",
+      "patientId": "usr6",
+      "patientName": "Doe",
+      "serviceTitle": "Preventative Cleaning & Exam",
+      "appointmentDate": "2026-08-28",
+      "appointmentTime": "11:00 AM",
+      "dentistName": "Dr Abebe Kebde",
+      "status": "Completed",
+      "autoCanceled": false,
+      "createdAt": "2026-08-05T12:30:05.429Z",
+      "updatedAt": "2026-08-05T12:31:36.092Z"
+    },
+    {
+      "_id": "app12",
+      "id": "app12",
+      "patientId": "usr7",
+      "patientName": "Selma Kedir",
+      "patientEmail": "selmak@gmail.com",
+      "patientPhone": "+251988226351",
+      "serviceTitle": "Clear Aligners Consultation",
+      "appointmentDate": "2026-08-28",
+      "appointmentTime": "08:00",
+      "dentistName": "Dr. Marcus Vance",
+      "status": "Confirmed",
+      "autoCanceled": false,
+      "createdAt": "2026-08-05T14:50:31.382Z",
+      "updatedAt": "2026-08-05T14:50:31.382Z"
     }
   ],
   "websiteConfig": {
-    "announcement": "nhgghf",
+    "announcement": "Welcome",
     "bookingCutoffTime": "14:00"
   }
 }
