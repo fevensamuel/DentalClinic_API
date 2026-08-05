@@ -26,7 +26,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://dental-clinic-public-website.vercel.app/',
+  'https://dental-clinic-public-website.vercel.app', // ✅ No trailing slash
   'https://dental-clinic-admin-sooty.vercel.app',
   'https://dental-clinic-backend-0vjn.onrender.com',
 ];
