@@ -554,12 +554,22 @@ app.get('/api/config', (req, res) => {
 });
 
 // ==========================================
-// 7. PATIENT APPOINTMENT ENDPOINTS
+// 7. PATIENT APPOINTMENT ENDPOINTS (FIXED)
 // ==========================================
 
 app.post('/api/appointments', authenticateToken, (req: any, res) => {
   try {
-    const { serviceTitle, serviceName, date, appointmentDate, time, appointmentTime, dentistName, doctorName } = req.body;
+    const { 
+      serviceTitle, 
+      serviceName, 
+      date, 
+      appointmentDate, 
+      time, 
+      appointmentTime, 
+      dentistName, 
+      doctorName,
+      status 
+    } = req.body;
 
     const finalServiceTitle = serviceTitle || serviceName || 'General Consultation';
     const finalDate = appointmentDate || date;
@@ -605,7 +615,7 @@ app.post('/api/appointments', authenticateToken, (req: any, res) => {
       appointmentDate: finalDate,
       appointmentTime: finalTime,
       dentistName: finalDentistName,
-      status: 'Pending' as AppointmentStatus,
+      status: status || 'Pending' as AppointmentStatus,
       autoCanceled: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -686,71 +696,8 @@ app.put('/api/appointments/:id/cancel', authenticateToken, (req: any, res) => {
 });
 
 // ==========================================
-// 8. ADMIN ENDPOINTS
+// 8. ADMIN APPOINTMENT ENDPOINTS
 // ==========================================
-
-app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) => {
-  try {
-    const db = dbInstance.getData();
-
-    const availabilityMap: Record<string, string[]> = {};
-    (db.availabilities || []).forEach((a: any) => {
-      availabilityMap[a.date] = a.doctorIds || [];
-    });
-
-    const blockedDates = (db.blockedDates || []).map((b: any) => ({
-      date: b.date,
-      reason: b.reason || 'Clinic Closed'
-    }));
-
-    const formattedAppointments = (db.appointments || []).map((a: any) => {
-      const patientUser = (db.users || []).find((u: any) => u.id === a.patientId || u._id === a.patientId);
-      return {
-        id: a.id || a._id,
-        patientId: a.patientId,
-        patientName: a.patientName || (patientUser ? patientUser.name : 'Unknown Patient'),
-        patientEmail: a.patientEmail || (patientUser ? patientUser.email || '' : ''),
-        patientPhone: a.patientPhone || (patientUser ? patientUser.phone : '+251922000100'),
-        date: a.appointmentDate,
-        time: a.appointmentTime,
-        dentist: a.dentistName,
-        status: a.status,
-        service: a.serviceTitle,
-        autoCanceled: Boolean(a.autoCanceled)
-      };
-    });
-
-    const response = {
-      services: db.services || [],
-      doctors: (db.doctors || []).map((d: any) => ({
-        id: d.id || d._id,
-        name: d.name,
-        title: d.title,
-        bio: d.bio || '',
-        imageUrl: d.imageUrl || '',
-        email: d.email || '',
-        phone: d.phone || '',
-        isFeatured: Boolean(d.isFeatured)
-      })),
-      appointments: formattedAppointments,
-      availability: availabilityMap,
-      blockedDates: blockedDates,
-      announcement: db.websiteConfig?.announcement || '',
-      bookingCutoffTime: db.websiteConfig?.bookingCutoffTime || '14:00'
-    };
-
-    console.log('✅ Admin config fetched:', {
-      availabilityKeys: Object.keys(availabilityMap),
-      blockedDatesCount: blockedDates.length,
-      doctorsCount: response.doctors.length
-    });
-
-    res.json(response);
-  } catch (error) {
-    console.error('Error fetching admin config:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, res) => {
   try {
@@ -886,6 +833,7 @@ app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, 
   }
 });
 
+// ✅ FIXED: Returns the updated appointment
 app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
@@ -910,7 +858,21 @@ app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (
     appointment.updatedAt = new Date().toISOString();
     dbInstance.save();
 
-    res.json({ success: true, message: 'Appointment status updated.', appointment });
+    res.json({ 
+      success: true, 
+      message: 'Appointment status updated.', 
+      appointment: {
+        id: appointment.id,
+        patientId: appointment.patientId,
+        patientName: appointment.patientName,
+        date: appointment.appointmentDate,
+        time: appointment.appointmentTime,
+        dentist: appointment.dentistName,
+        status: appointment.status,
+        service: appointment.serviceTitle,
+        autoCanceled: appointment.autoCanceled
+      }
+    });
   } catch (error) {
     console.error('Error updating appointment status:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -1027,7 +989,6 @@ app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req: 
 const getImageUrl = (req: Request, filename: string) => {
   if (!filename) return '';
   
-  // ✅ In production, use the deployed backend URL
   if (process.env.NODE_ENV === 'production') {
     return `${DEPLOYED_BACKEND_URL}/uploads/doctors/${filename}`;
   }
@@ -1041,13 +1002,11 @@ const getImageUrl = (req: Request, filename: string) => {
 const getDoctorImageUrl = (req: Request, doctor: { imageUrl?: string }) => {
   if (doctor.imageUrl && doctor.imageUrl.trim()) {
     let url = doctor.imageUrl;
-    // ✅ Replace localhost with deployed URL in production
     if (process.env.NODE_ENV === 'production' && url.includes('localhost:3000')) {
       url = url.replace('http://localhost:3000', DEPLOYED_BACKEND_URL);
     }
     return url;
   }
-  // ✅ Return empty string - no placeholder
   return '';
 };
 
@@ -1073,7 +1032,6 @@ const fixDoctorImageUrls = () => {
   }
 };
 
-// Run the fix on startup
 setTimeout(fixDoctorImageUrls, 3000);
 
 app.post('/api/admin/doctors', authenticateToken, requireAdmin, upload.single('image'), (req: any, res) => {
@@ -1439,18 +1397,15 @@ const checkNoShows = async () => {
     const todayStr = now.toISOString().split('T')[0];
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // Get today's appointments that are Confirmed or Arrived
     const todayAppointments = (db.appointments || []).filter((a: any) => {
       if (a.appointmentDate !== todayStr) return false;
       if (a.status !== 'Confirmed' && a.status !== 'Arrived') return false;
       
-      // Parse appointment time (e.g., "14:00" or "2:00 PM")
       let timeStr = a.appointmentTime || '';
       if (!timeStr) return false;
       
       let hour = 0, minute = 0;
       
-      // Handle both "14:00" and "2:00 PM" formats
       if (timeStr.includes('PM') || timeStr.includes('AM')) {
         const parts = timeStr.split(' ');
         const timeParts = parts[0].split(':');
@@ -1465,13 +1420,10 @@ const checkNoShows = async () => {
       }
       
       const appointmentMinutes = hour * 60 + minute;
-      
-      // If appointment is more than 30 minutes ago, mark as No Show
       const diffMinutes = currentMinutes - appointmentMinutes;
       return diffMinutes > 30;
     });
 
-    // Update each overdue appointment to No Show
     let updated = 0;
     for (const appointment of todayAppointments) {
       appointment.status = 'No Show';
@@ -1488,10 +1440,7 @@ const checkNoShows = async () => {
   }
 };
 
-// Run the check every minute
 setInterval(checkNoShows, 60000);
-
-// Also run on startup after a short delay
 setTimeout(checkNoShows, 5000);
 
 // ==========================================
