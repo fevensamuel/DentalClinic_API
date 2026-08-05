@@ -1013,14 +1013,21 @@ app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req: 
 
 const getImageUrl = (req: Request, filename: string) => {
   if (!filename) return '';
-  const protocol = req.get('x-forwarded-proto') || req.protocol;
-  const host = req.get('host');
-  return `${protocol}://${host}/uploads/doctors/${filename}`;
+  // ✅ Use the correct base URL based on environment
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? 'https://dental-clinic-backend-0vjn.onrender.com'
+    : `http://localhost:3000`;
+  return `${baseUrl}/uploads/doctors/${filename}`;
 };
 
 const getDoctorImageUrl = (req: Request, doctor: { imageUrl?: string }) => {
   if (doctor.imageUrl && doctor.imageUrl.trim()) {
-    return doctor.imageUrl;
+    let url = doctor.imageUrl;
+    // ✅ Replace localhost with deployed URL in production
+    if (process.env.NODE_ENV === 'production' && url.includes('localhost:3000')) {
+      url = url.replace('http://localhost:3000', 'https://dental-clinic-backend-0vjn.onrender.com');
+    }
+    return url;
   }
   return '';
 };
