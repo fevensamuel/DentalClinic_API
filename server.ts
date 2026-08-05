@@ -18,6 +18,9 @@ const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dental_clinic_super_secret_key_2026';
 
+// ✅ Get the deployed backend URL for production
+const DEPLOYED_BACKEND_URL = 'https://dental-clinic-backend-0vjn.onrender.com';
+
 // ==========================================
 // 1. MIDDLEWARE CONFIGURATION
 // ==========================================
@@ -26,7 +29,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://dental-clinic-public-website.vercel.app', // ✅ No trailing slash
+  'https://dental-clinic-public-website.vercel.app',
   'https://dental-clinic-admin-sooty.vercel.app',
   'https://dental-clinic-backend-0vjn.onrender.com',
 ];
@@ -49,9 +52,17 @@ app.use(cors({
 // 2. FILE UPLOAD CONFIGURATION
 // ==========================================
 
+// Ensure upload directories exist
 const uploadDir = path.join(appRoot, 'uploads', 'doctors');
+const mainUploadDir = path.join(appRoot, 'uploads');
+
+if (!fs.existsSync(mainUploadDir)) {
+  fs.mkdirSync(mainUploadDir, { recursive: true });
+  console.log('📁 Created main uploads directory');
+}
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('📁 Created uploads/doctors directory');
 }
 
 const storage = multer.diskStorage({
@@ -77,6 +88,7 @@ const upload = multer({
   }
 });
 
+// ✅ Serve static files from uploads folder
 app.use('/uploads', express.static(path.join(appRoot, 'uploads')));
 app.use('/assets', express.static(path.join(appRoot, 'assets')));
 
@@ -1011,26 +1023,58 @@ app.delete('/api/admin/services/:title', authenticateToken, requireAdmin, (req: 
 // 10. ADMIN DOCTORS ENDPOINTS
 // ==========================================
 
+// ✅ Get correct image URL based on environment
 const getImageUrl = (req: Request, filename: string) => {
   if (!filename) return '';
-  // ✅ Use the correct base URL based on environment
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? 'https://dental-clinic-backend-0vjn.onrender.com'
-    : `http://localhost:3000`;
-  return `${baseUrl}/uploads/doctors/${filename}`;
+  
+  // ✅ In production, use the deployed backend URL
+  if (process.env.NODE_ENV === 'production') {
+    return `${DEPLOYED_BACKEND_URL}/uploads/doctors/${filename}`;
+  }
+  
+  const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
+  const host = req.get('host');
+  return `${protocol}://${host}/uploads/doctors/${filename}`;
 };
 
+// ✅ Get doctor image URL - returns exactly what's stored
 const getDoctorImageUrl = (req: Request, doctor: { imageUrl?: string }) => {
   if (doctor.imageUrl && doctor.imageUrl.trim()) {
     let url = doctor.imageUrl;
     // ✅ Replace localhost with deployed URL in production
     if (process.env.NODE_ENV === 'production' && url.includes('localhost:3000')) {
-      url = url.replace('http://localhost:3000', 'https://dental-clinic-backend-0vjn.onrender.com');
+      url = url.replace('http://localhost:3000', DEPLOYED_BACKEND_URL);
     }
     return url;
   }
+  // ✅ Return empty string - no placeholder
   return '';
 };
+
+// ✅ Fix existing image URLs on startup
+const fixDoctorImageUrls = () => {
+  try {
+    const db = dbInstance.getData();
+    let updated = false;
+    
+    (db.doctors || []).forEach((doctor: any) => {
+      if (doctor.imageUrl && doctor.imageUrl.includes('localhost:3000')) {
+        doctor.imageUrl = doctor.imageUrl.replace('http://localhost:3000', DEPLOYED_BACKEND_URL);
+        updated = true;
+      }
+    });
+    
+    if (updated) {
+      dbInstance.save();
+      console.log('✅ Fixed doctor image URLs');
+    }
+  } catch (error) {
+    console.error('Error fixing doctor image URLs:', error);
+  }
+};
+
+// Run the fix on startup
+setTimeout(fixDoctorImageUrls, 3000);
 
 app.post('/api/admin/doctors', authenticateToken, requireAdmin, upload.single('image'), (req: any, res) => {
   try {
@@ -1039,6 +1083,7 @@ app.post('/api/admin/doctors', authenticateToken, requireAdmin, upload.single('i
     let finalImageUrl = '';
     if (req.file) {
       finalImageUrl = getImageUrl(req, req.file.filename);
+      console.log('📸 Image uploaded:', finalImageUrl);
     } else if (typeof imageUrl === 'string' && imageUrl.trim()) {
       finalImageUrl = imageUrl.trim();
     }
@@ -1097,6 +1142,7 @@ app.put('/api/admin/doctors/:id', authenticateToken, requireAdmin, upload.single
     let finalImageUrl = doctor.imageUrl || '';
     if (req.file) {
       finalImageUrl = getImageUrl(req, req.file.filename);
+      console.log('📸 Image updated:', finalImageUrl);
     } else if (typeof imageUrl === 'string') {
       finalImageUrl = imageUrl.trim();
     }
