@@ -446,15 +446,6 @@ app.get('/api/doctors', (req, res) => {
   }
 });
 
-app.get('/api/public/announcement', (req, res) => {
-  try {
-    const db = dbInstance.getData();
-    res.json({ text: db.websiteConfig?.announcement || '' });
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 app.get('/api/slots', (req, res) => {
   try {
     const date = req.query.date as string;
@@ -544,17 +535,8 @@ app.get('/api/availability', (req, res) => {
   }
 });
 
-app.get('/api/config', (req, res) => {
-  try {
-    const db = dbInstance.getData();
-    res.json(db.websiteConfig || { announcement: '', bookingCutoffTime: '14:00' });
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // ==========================================
-// 7. PATIENT APPOINTMENT ENDPOINTS (FIXED)
+// 7. PATIENT APPOINTMENT ENDPOINTS
 // ==========================================
 
 app.post('/api/appointments', authenticateToken, (req: any, res) => {
@@ -696,9 +678,74 @@ app.put('/api/appointments/:id/cancel', authenticateToken, (req: any, res) => {
 });
 
 // ==========================================
-// 8. ADMIN APPOINTMENT ENDPOINTS
+// 8. ADMIN ENDPOINTS - ✅ ALL ROUTES INCLUDED
 // ==========================================
 
+// ✅ GET /api/admin/config - Admin configuration endpoint
+app.get('/api/admin/config', authenticateToken, requireAdmin, (req: any, res) => {
+  try {
+    const db = dbInstance.getData();
+
+    const availabilityMap: Record<string, string[]> = {};
+    (db.availabilities || []).forEach((a: any) => {
+      availabilityMap[a.date] = a.doctorIds || [];
+    });
+
+    const blockedDates = (db.blockedDates || []).map((b: any) => ({
+      date: b.date,
+      reason: b.reason || 'Clinic Closed'
+    }));
+
+    const formattedAppointments = (db.appointments || []).map((a: any) => {
+      const patientUser = (db.users || []).find((u: any) => u.id === a.patientId || u._id === a.patientId);
+      return {
+        id: a.id || a._id,
+        patientId: a.patientId,
+        patientName: a.patientName || (patientUser ? patientUser.name : 'Unknown Patient'),
+        patientEmail: a.patientEmail || (patientUser ? patientUser.email || '' : ''),
+        patientPhone: a.patientPhone || (patientUser ? patientUser.phone : '+251922000100'),
+        date: a.appointmentDate,
+        time: a.appointmentTime,
+        dentist: a.dentistName,
+        status: a.status,
+        service: a.serviceTitle,
+        autoCanceled: Boolean(a.autoCanceled)
+      };
+    });
+
+    const response = {
+      services: db.services || [],
+      doctors: (db.doctors || []).map((d: any) => ({
+        id: d.id || d._id,
+        name: d.name,
+        title: d.title,
+        bio: d.bio || '',
+        imageUrl: d.imageUrl || '',
+        email: d.email || '',
+        phone: d.phone || '',
+        isFeatured: Boolean(d.isFeatured)
+      })),
+      appointments: formattedAppointments,
+      availability: availabilityMap,
+      blockedDates: blockedDates,
+      announcement: db.websiteConfig?.announcement || '',
+      bookingCutoffTime: db.websiteConfig?.bookingCutoffTime || '14:00'
+    };
+
+    console.log('✅ Admin config fetched:', {
+      availabilityKeys: Object.keys(availabilityMap),
+      blockedDatesCount: blockedDates.length,
+      doctorsCount: response.doctors.length
+    });
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching admin config:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ✅ GET /api/admin/appointments - Get all appointments
 app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const db = dbInstance.getData();
@@ -725,6 +772,7 @@ app.get('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, r
   }
 });
 
+// ✅ POST /api/admin/appointments - Create appointment
 app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { patientId, patientName, patientPhone, patientEmail, serviceTitle, date, appointmentDate, time, appointmentTime, dentistId, dentistName, status } = req.body;
@@ -833,7 +881,7 @@ app.post('/api/admin/appointments', authenticateToken, requireAdmin, (req: any, 
   }
 });
 
-// ✅ FIXED: Returns the updated appointment
+// ✅ PUT /api/admin/appointments/:id/status - Update appointment status
 app.put('/api/admin/appointments/:id/status', authenticateToken, requireAdmin, (req: any, res) => {
   try {
     const { id } = req.params;
@@ -998,7 +1046,6 @@ const getImageUrl = (req: Request, filename: string) => {
   return `${protocol}://${host}/uploads/doctors/${filename}`;
 };
 
-// ✅ Get doctor image URL - returns exactly what's stored
 const getDoctorImageUrl = (req: Request, doctor: { imageUrl?: string }) => {
   if (doctor.imageUrl && doctor.imageUrl.trim()) {
     let url = doctor.imageUrl;
@@ -1351,24 +1398,8 @@ app.delete('/api/admin/blocked-dates/:date', authenticateToken, requireAdmin, (r
 });
 
 // ==========================================
-// 12. ADMIN CONFIGURATION (ANNOUNCEMENT & CUTOFF)
+// 12. ADMIN CUTOFF CONFIGURATION
 // ==========================================
-
-app.put('/api/admin/announcement', authenticateToken, requireAdmin, (req: any, res) => {
-  try {
-    const { text } = req.body;
-    const db = dbInstance.getData();
-
-    db.websiteConfig = db.websiteConfig || { announcement: '', bookingCutoffTime: '14:00' };
-    db.websiteConfig.announcement = text || '';
-    dbInstance.save();
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error updating announcement:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req: any, res) => {
   try {
@@ -1387,7 +1418,7 @@ app.put('/api/admin/cutoff', authenticateToken, requireAdmin, (req: any, res) =>
 });
 
 // ==========================================
-// 13. AUTO NO-SHOW CHECKER (Runs every minute)
+// 13. AUTO NO-SHOW CHECKER
 // ==========================================
 
 const checkNoShows = async () => {
@@ -1461,7 +1492,6 @@ app.get('/', (req, res) => {
         'GET /api/services',
         'GET /api/doctors',
         'GET /api/slots',
-        'GET /api/public/announcement',
         'GET /api/blocked-dates'
       ],
       auth: [
@@ -1492,7 +1522,6 @@ app.get('/', (req, res) => {
         'GET /api/admin/blocked-dates',
         'POST /api/admin/blocked-dates',
         'DELETE /api/admin/blocked-dates/:date',
-        'PUT /api/admin/announcement',
         'PUT /api/admin/cutoff'
       ]
     }
@@ -1516,7 +1545,7 @@ app.use((req, res) => {
     error: 'Not Found',
     message: `Route ${req.method} ${req.path} does not exist`,
     available: {
-      public: '/api/services, /api/doctors, /api/slots, /api/public/announcement',
+      public: '/api/services, /api/doctors, /api/slots, /api/blocked-dates',
       auth: '/api/auth/login, /api/auth/register, /api/auth/me',
       patient: '/api/appointments, /api/appointments/me, /api/appointments/:id/cancel',
       admin: '/api/admin/* (requires admin token)'
